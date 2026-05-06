@@ -1,0 +1,24 @@
+void remplir_cartes (char carte []) // fonction pour décider il y a qui dans le paquet de cartes
+int i;
+for(i=0; i<4; i++) { // on remplit les cases de 0 à 3
+carte[i]= 'B'; // avec i l'emplacmeent de la carte et carte[i] le contenu de la carte, 'B' correspond au monstre Basilics (il y en a 4) 
+}
+for(i=4; i<8;i++){ // remplissage des 4 cases suivantes 
+carte[i]= 'T'; // meme principe que precedemment, le 'T' représente les Trolls 
+}
+for(i=8, i<12, i++) { // remplissage des 4 cases suivantes
+carte[i]= 'Z' ; // represente les Zombies
+}
+for (i=12, i<18, i++){// on remplis les 2 cases suivantes 
+carte [i]= 'C';// pour les coffres forts 
+carte[18]='E'; // épée de feu 
+carte [19]= 'F'; // baton controle familier ( car le B est deja pris) 
+carte [20]= 'D'; // la dague du sommeil
+carte [21] = 'G'; // le grimmoire interdit 
+carte [22]= 'P'; //portail magique 
+carte [23]= 'M';// totem de transmutation 
+carte [24]= 'M';// pour le totem de transmutation on aurait aussi pu faire une mini boucle 
+}
+
+void melanger_carte(int carte, int n) //void car c'est une action sans réponse
+for(int i=n-1, i>0; i--){ // on parcourt depuis la fin le tableau de 25 qu,on a creer 
