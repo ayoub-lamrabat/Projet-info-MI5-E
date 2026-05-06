@@ -1,1 +1,126 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MAX_JOUEURS 100
+#define MAX_NOM 50
+#define TAILLE_GRILLE 5
+// Structure pour stocker un joueur
+	typedef struct {
+	char nom[MAX_NOM];
+	int parties;
+	int victoires;
+	} Joueur;
+
+// Fonctions d'affichage
+
+	void classement(Joueur t[], int nb) {
+	Joueur copie[MAX_JOUEURS];
+	int i;
+
+	if (nb == 0) {
+		printf("\n Pas de joueurs dans l'historique.\n");
+	}
+
+	for (i = 0; i < nb; i++) {
+		copie[i] = t[i];
+	}
+
+	trier(copie, nb);
+
+	printf("\n");
+	printf("CLASSEMENT GENERAL\n");
+	printf("\n");
+	printf("Pos | Nom | Vic | Par\n");
+
+	for (i = 0; i < nb && i < 10; i++) {
+		printf("%3d | %-19s | %3d | %3d\n",
+		i + 1, copie[i].nom, copie[i].victoires, copie[i].parties);
+		}
+	printf("\n");
+		}
+
+	void fin_partie(char* gagnant, int secondes) {
+	int minutes, sec;
+
+	minutes = secondes / 60;
+	sec = secondes % 60;
+	printf("\n");
+	printf("FIN DE LA PARTIE !\n");
+	printf("\n");
+	printf("VAINQUEUR : %s\n", gagnant);
+	printf("DUREE : %02d min %02d sec\n", minutes, sec);
+	printf("\n");
+	}
+
+	void plateau_complet(int g[TAILLE_GRILLE][TAILLE_GRILLE]) {
+	int i, j;
+
+	printf("\n");
+	printf("PLATEAU COMPLET DEVOILE\n");
+	printf("\n");
+
+	for (i = 0; i < TAILLE_GRILLE; i++) {
+		for (j = 0; j < TAILLE_GRILLE; j++) {
+			printf("%3d ", g[i][j]);
+			}
+		printf("\n");
+		}
+	printf("\n");
+}
+
+// Fonctions d'interface utilisateur
+
+	int menu() {
+	int choix;
+
+	printf("\n");
+	printf("MEMO-RPG\n");
+	printf("\n");
+	printf("1. NOUVELLE PARTIE\n");
+	printf("2. CLASSEMENT\n");
+	printf("3. QUITTER\n");
+	printf("\n");
+	printf("Votre choix : ");
+
+	scanf("%d", &choix);
+	return choix;
+	}
+
+	int configurer(char joueurs[][MAX_NOM]) {
+	int nb, i;
+
+	printf("\n");
+	printf("CONFIGURATION DE LA PARTIE\n");
+	printf("\n");
+
+	do {
+		printf("Nombre de joueurs (2 a 4) : ");
+		scanf("%d", &nb);
+	} while (nb < 2 || nb > 4);
+
+	printf("\n");
+	for (i = 0; i < nb; i++) {
+		printf("Joueur %d : ", i + 1);
+		scanf("%s", joueurs[i]);
+	}
+
+	return nb;
+}
+
+	int rejouer(void) {
+	int choix;
+
+	printf("\n");
+	printf("Voulez-vous rejouer ?\n");
+	printf("1. OUI, avec les memes joueurs\n");
+	printf("2. NON, retour au menu\n");
+	printf("\n");
+	printf("Votre choix : ");
+
+	scanf("%d", &choix);
+	return (choix == 1);
+	}
+
 
