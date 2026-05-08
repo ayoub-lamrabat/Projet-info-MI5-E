@@ -41,3 +41,65 @@ plateau [i][j]= carte[a];// je pioche une carte et je l'a me sur le plateau, ca 
 a++; // je prends la carte suivante, sans ca on piocherai toujours la meme carte
 } // fonction permettant de remplir tout le plateau avec les cartes contenant le bon nombre de monstres etc.
 
+#define MIROIR 2
+#define TORCHE 3
+#define HACHE 4
+#define ARC 5 // Quel armes correspond a quoi
+#define VICTOIRE 1
+#define DEFAITE 0
+
+
+int choisir_arme(){ // fonction qui permet a l'uilisateur de choisir son arme
+int choix; 
+int valide =0;
+do {
+printf("Choisissez votre arme :" \n);
+scanf("%d", &choix); 
+if(choix <2 || choix>5){
+printf("Nombre invalide ! Saisir un nombre enre 1 et 4.\n);
+}
+}while (choix < 2|| choix > 5); 
+return choix; 
+}
+
+
+int resoudre_combat(int arme, char monstre){
+if(monstre_case== 'B'){
+if(arme== MIROIR) {// on utilise direct le nom des armes grace au define 
+printf("Le Basilic se pétrifie, Victoire"/n);
+return VICOIRE;
+}else{
+printf(" Les yeux du basilic vous transforme en pierre, Defaite"\n);
+return DEFAITE;
+}
+}else if(monstre == 'Z') {
+if (arme==TORCHE) {
+printf("Le zombie ne supporte pas, Victoire.\n");
+return VICTOIRE; 
+}else{ 
+printf("Le zombie vous a attrapé, Defaite\n); 
+return DEFAITE;
+}
+}else if (monstre== 'T'){
+if (arme== HACHE) {
+printf("vous l'emportez face au troll\n);
+}else{
+printf("le Troll vous tue\n); 
+return DEFAITE;
+}
+}
+
+else if(monstre== 'H'){
+if (arme== ARC) {
+printf(Vous tuez la harpie.\n)
+return VICTOIRE; 
+}else{ 
+printf("La harpie vous tue.\n);
+return DEFAITE;
+}
+}
+return VICTOIRE; //si la case n'est pas un monstre 
+
+
+
+
