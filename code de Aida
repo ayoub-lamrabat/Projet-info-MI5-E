@@ -6,11 +6,16 @@ carte[i]= 'B'; // avec i l'emplacmeent de la carte et carte[i] le contenu de la 
 for(i=4; i<8;i++){ // remplissage des 4 cases suivantes 
 carte[i]= 'T'; // meme principe que precedemment, le 'T' représente les Trolls 
 }
-for(i=8, i<12, i++) { // remplissage des 4 cases suivantes
+for(i=8; i<12, i++) { // remplissage des 4 cases suivantes
 carte[i]= 'Z' ; // represente les Zombies
 }
-for (i=12, i<18, i++){// on remplis les 2 cases suivantes 
+for (i=12; i<16, i++){// on remplis les 2 cases suivantes
+carte[i]='H'// pour les harpies 
+}
+for(i=12; i<18; i++) { // Les 2 cases suivantes
 carte [i]= 'C';// pour les coffres forts 
+}
+
 carte[18]='E'; // épée de feu 
 carte [19]= 'F'; // baton controle familier ( car le B est deja pris) 
 carte [20]= 'D'; // la dague du sommeil
@@ -21,4 +26,18 @@ carte [24]= 'M';// pour le totem de transmutation on aurait aussi pu faire une m
 }
 
 void melanger_carte(int carte, int n) //void car c'est une action sans réponse
-for(int i=n-1, i>0; i--){ // on parcourt depuis la fin le tableau de 25 qu,on a creer 
+for(int i=n-1, i>0; i--){ // on parcourt depuis la fin le tableau de 25 qu'on a créer
+int j = rand % (i+1); // va permetre de mélanger efficacement les cartes, pourquoi pas %25 comme d'habitude ? On pourrais piocher une carte deja placée a la fin, ca permet de ne plus toucher les cartes deja melangées 
+int temp= carte[i]; 
+carte[i]= carte[j];
+carte[j]=temp;// cet échange de variable va permettre d'échanger la carte de base avec une carte choisit aléatoirement sans détruire les données (lié chap tri)
+}// a noter qu'on uilise d'abord un tableau 1D parce que c'est plus simple a manipuler, (pr melanger un tableau 2D il faut gerer des paires de coordonnes, et en voulant placer les monstres sur le plateau risque detomber sur la meme case en tirant (devien loud )
+
+void remplir_plateau (char carte[25], char plateau[5][5]){ //le tableau de carte créer précedemment et le plateau a remplir
+int a=0; // va augmenter de 1 en 1, va permettre de parcourir toutes les cartes
+for (int i=0; i<5; i++){ // Il s'agit d'un jeu 5x5, on parcourt les 5 cases verticales 
+for (int j=0; j<5; j++){ // parcourt horizontalement
+plateau [i][j]= carte[a];// je pioche une carte et je l'a me sur le plateau, ca commence a 0 car on a initialisé "a" a 0
+a++; // je prends la carte suivante, sans ca on piocherai toujours la meme carte
+} // fonction permettant de remplir tout le plateau avec les cartes contenant le bon nombre de monstres etc.
+
