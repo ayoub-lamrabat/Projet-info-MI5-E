@@ -99,6 +99,7 @@ return DEFAITE;
 }
 }
 return VICTOIRE; //si la case n'est pas un monstre 
+}
 
 
 
