@@ -12,115 +12,415 @@
 	int parties;
 	int victoires;
 	} Joueur;
+void vider_buffer(void) {
+    int c;
 
-// Fonctions d'affichage
-
-	void classement(Joueur t[], int nb) {
-	Joueur copie[MAX_JOUEURS];
-	int i;
-
-	if (nb == 0) {
-		printf("\n Pas de joueurs dans l'historique.\n");
-	}
-
-	for (i = 0; i < nb; i++) {
-		copie[i] = t[i];
-	}
-
-	trier(copie, nb);
-
-	printf("\n");
-	printf("CLASSEMENT GENERAL\n");
-	printf("\n");
-	printf("Pos | Nom | Vic | Par\n");
-
-	for (i = 0; i < nb && i < 10; i++) {
-		printf("%3d | %-19s | %3d | %3d\n",
-		i + 1, copie[i].nom, copie[i].victoires, copie[i].parties);
-		}
-	printf("\n");
-		}
-
-	void fin_partie(char* gagnant, int secondes) {
-	int minutes, sec;
-
-	minutes = secondes / 60;
-	sec = secondes % 60;
-	printf("\n");
-	printf("FIN DE LA PARTIE !\n");
-	printf("\n");
-	printf("VAINQUEUR : %s\n", gagnant);
-	printf("DUREE : %02d min %02d sec\n", minutes, sec);
-	printf("\n");
-	}
-
-	void plateau_complet(int g[TAILLE_GRILLE][TAILLE_GRILLE]) {
-	int i, j;
-
-	printf("\n");
-	printf("PLATEAU COMPLET DEVOILE\n");
-	printf("\n");
-
-	for (i = 0; i < TAILLE_GRILLE; i++) {
-		for (j = 0; j < TAILLE_GRILLE; j++) {
-			printf("%3d ", g[i][j]);
-			}
-		printf("\n");
-		}
-	printf("\n");
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
 }
 
-// Fonctions d'interface utilisateur
+/*
+    void enlever_retour_ligne(char texte[])
 
-	int menu() {
-	int choix;
+    Cette fonction est en void car elle ne renvoie pas une nouvelle chaine.
+    Elle modifie directement le tableau de caracteres donne en parametre.
 
-	printf("\n");
-	printf("MEMO-RPG\n");
-	printf("\n");
-	printf("1. NOUVELLE PARTIE\n");
-	printf("2. CLASSEMENT\n");
-	printf("3. QUITTER\n");
-	printf("\n");
-	printf("Votre choix : ");
+    Parametre :
+    - texte[] : chaine a corriger.
+*/
+void enlever_retour_ligne(char texte[]) {
+    int taille;
 
-	scanf("%d", &choix);
-	return choix;
-	}
+    /* strlen donne le nombre de caracteres dans la chaine. */
+    taille = strlen(texte);
 
-	int configurer(char joueurs[][MAX_NOM]) {
-	int nb, i;
-
-	printf("\n");
-	printf("CONFIGURATION DE LA PARTIE\n");
-	printf("\n");
-
-	do {
-		printf("Nombre de joueurs (2 a 4) : ");
-		scanf("%d", &nb);
-	} while (nb < 2 || nb > 4);
-
-	printf("\n");
-	for (i = 0; i < nb; i++) {
-		printf("Joueur %d : ", i + 1);
-		scanf("%s", joueurs[i]);
-	}
-
-	return nb;
+    /* fgets garde souvent le '\n' a la fin.
+       Ici on le remplace par '\0', qui marque la fin d'une chaine en C. */
+    if (taille > 0 && texte[taille - 1] == '\n') {
+        texte[taille - 1] = '\0';
+    }
 }
+int lire_entier(char message[], int min, int max) {
+    int valeur;
+    int lecture_correcte;
+    int nombre_valide;
 
-	int rejouer(void) {
-	int choix;
+    nombre_valide = 0;
+    valeur = min;
 
-	printf("\n");
-	printf("Voulez-vous rejouer ?\n");
-	printf("1. OUI, avec les memes joueurs\n");
-	printf("2. NON, retour au menu\n");
-	printf("\n");
-	printf("Votre choix : ");
+    while (nombre_valide == 0) {
+        printf("%s", message);
 
-	scanf("%d", &choix);
-	return (choix == 1);
-	}
+        /* scanf renvoie 1 si la lecture d'un entier a reussi.
+           Si l'utilisateur tape du texte, lecture_correcte ne vaut pas 1. */
+        lecture_correcte = scanf("%d", &valeur);
 
+        if (lecture_correcte != 1) {
+            printf("Erreur : il faut entrer un nombre.\n");
+            vider_buffer();
+        } else {
+            vider_buffer();
+
+            if (valeur < min || valeur > max) {
+                printf("Erreur : le nombre doit etre entre %d et %d.\n", min, max);
+            } else {
+                nombre_valide = 1;
+            }
+        }
+    }
+
+    return valeur;
+}
+void recuperer_nom(char ligne[], char nom[]) {
+    int i;
+    int j;
+
+    i = 5;
+    j = 0;
+
+    while (ligne[i] != '\0' && ligne[i] != '\n') {
+        nom[j] = ligne[i];
+        i++;
+        j++;
+    }
+
+    nom[j] = '\0';
+}
+int recuperer_nombre_depuis_ligne(char ligne[]) {
+    char texte_nombre[20];
+    int i;
+    int j;
+    int nombre;
+
+    i = 0;
+    j = 0;
+
+    while (ligne[i] != ':' && ligne[i] != '\0') {
+        i++;
+    }
+
+    if (ligne[i] == ':') {
+        i++;
+    }
+
+    if (ligne[i] == ' ') {
+        i++;
+    }
+
+    while (ligne[i] != '\0' && ligne[i] != '\n') {
+        texte_nombre[j] = ligne[i];
+        i++;
+        j++;
+    }
+
+    texte_nombre[j] = '\0';
+
+    /* atoi transforme une chaine en entier.
+       Exemple : "28" devient le nombre 28. */
+    nombre = atoi(texte_nombre);
+
+    return nombre;
+}
+int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
+    int i;
+    int position;
+
+    position = -1;
+
+    for (i = 0; i < nb_joueurs; i++) {
+        /* strcmp compare deux chaines.
+           Si les deux noms sont identiques, strcmp renvoie 0. */
+        if (strcmp(joueurs[i].nom, nom) == 0) {
+            position = i;
+        }
+    }
+int ajouter_joueur_si_absent(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+    int position;
+
+    position = chercher_joueur(joueurs, *nb_joueurs, nom);
+
+    if (position == -1) {
+        if (*nb_joueurs < MAX_JOUEURS) {
+            /* strcpy copie une chaine dans une autre.
+               Ici on copie le nom recu dans la structure du nouveau joueur. */
+            strcpy(joueurs[*nb_joueurs].nom, nom);
+            joueurs[*nb_joueurs].parties = 0;
+            joueurs[*nb_joueurs].victoires = 0;
+            joueurs[*nb_joueurs].cases_parcourues = 0;
+
+            position = *nb_joueurs;
+            (*nb_joueurs)++;
+        } else {
+            printf("Erreur : l'historique est plein.\n");
+        }
+    }
+
+    return position;
+}
+int lire_un_joueur_dans_fichier(FILE *fichier, Joueur *joueur) {
+    char ligne[100];
+    int lecture_reussie;
+
+    lecture_reussie = 0;
+
+    if (fgets(ligne, 100, fichier) != NULL) {
+        recuperer_nom_depuis_ligne(ligne, joueur->nom);
+
+        if (fgets(ligne, 100, fichier) != NULL) {
+            joueur->parties = recuperer_nombre_depuis_ligne(ligne);
+
+            if (fgets(ligne, 100, fichier) != NULL) {
+                joueur->victoires = recuperer_nombre_depuis_ligne(ligne);
+
+                if (fgets(ligne, 100, fichier) != NULL) {
+                    joueur->cases_parcourues = recuperer_nombre_depuis_ligne(ligne);
+
+                    /* On lit la ligne "---" qui separe deux joueurs. */
+                    fgets(ligne, 100, fichier);
+
+                    lecture_reussie = 1;
+                }
+            }
+        }
+    }
+
+    return lecture_reussie;
+}
+int charger_historique(Joueur joueurs[]) {
+    FILE *fichier;
+    int nb_joueurs;
+    int lecture_reussie;
+
+    nb_joueurs = 0;
+    lecture_reussie = 1;
+
+    /* fopen avec "r" ouvre le fichier en lecture.
+       Si le fichier n'existe pas encore, fopen renvoie NULL. */
+    fichier = fopen(FICHIER_STATS, "r");
+
+    if (fichier == NULL) {
+        nb_joueurs = 0;
+    } else {
+        while (lecture_reussie == 1 && nb_joueurs < MAX_JOUEURS) {
+            lecture_reussie = lire_un_joueur_dans_fichier(fichier, &joueurs[nb_joueurs]);
+
+            if (lecture_reussie == 1) {
+                nb_joueurs++;
+            }
+        }
+
+        fclose(fichier);
+    }
+
+    return nb_joueurs;
+}
+void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
+    FILE *fichier;
+    int i;
+
+    /* fopen avec "w" ouvre le fichier en ecriture.
+       Attention : cela remplace l'ancien contenu du fichier. */
+    fichier = fopen(FICHIER_STATS, "w");
+
+    if (fichier == NULL) {
+        printf("Erreur : impossible d'ouvrir le fichier de sauvegarde.\n");
+    } else {
+        for (i = 0; i < nb_joueurs; i++) {
+            /* fprintf ecrit dans un fichier.
+               C'est comme printf, mais le texte va dans stats_joueurs.txt. */
+            fprintf(fichier, "Nom: %s\n", joueurs[i].nom);
+            fprintf(fichier, "Parties: %d\n", joueurs[i].parties);
+            fprintf(fichier, "Victoires: %d\n", joueurs[i].victoires);
+            fprintf(fichier, "Cases: %d\n", joueurs[i].cases_parcourues);
+            fprintf(fichier, "---\n");
+        }
+
+        fclose(fichier);
+    }
+}
+void initialiser_cases_partie(int cases_partie[], int nb_joueurs_partie) {
+    int i;
+
+    for (i = 0; i < nb_joueurs_partie; i++) {
+        cases_partie[i] = 0;
+    }
+}
+void ajouter_case_parcourue(int cases_partie[], int numero_joueur) {
+    /*
+        numero_joueur commence a 0.
+        Exemple :
+        joueur 1 -> numero_joueur = 0
+        joueur 2 -> numero_joueur = 1
+    */
+    cases_partie[numero_joueur]++;
+
+void mettre_a_jour_historique(Joueur historique[],
+                              int *nb_historique,
+                              char noms_partie[][MAX_NOM],
+                              int nb_joueurs_partie,
+                              char gagnant[],
+                              int cases_partie[]) {
+    int i;
+    int position;
+
+    for (i = 0; i < nb_joueurs_partie; i++) {
+        position = ajouter_joueur_si_absent(historique, nb_historique, noms_partie[i]);
+
+        if (position != -1) {
+            historique[position].parties++;
+            historique[position].cases_parcourues += cases_partie[i];
+
+            /* On compare le nom du joueur avec le nom du gagnant.
+               Si c'est le meme nom, on ajoute une victoire. */
+            if (strcmp(noms_partie[i], gagnant) == 0) {
+                historique[position].victoires++;
+            }
+        }
+    }
+}
+int joueur_est_mieux_classe(Joueur a, Joueur b) {
+    int resultat;
+
+    resultat = 0;
+
+    if (a.victoires > b.victoires) {
+        resultat = 1;
+    } else if (a.victoires == b.victoires && a.parties < b.parties) {
+        resultat = 1;
+    } else if (a.victoires == b.victoires &&
+               a.parties == b.parties &&
+               a.cases_parcourues > b.cases_parcourues) {
+        resultat = 1;
+    }
+
+    return resultat;
+}
+void echanger_joueurs(Joueur *a, Joueur *b) {
+    Joueur temp;
+
+    /* Les pointeurs permettent de modifier directement les deux joueurs
+       dans le tableau, sans faire une copie inutile du tableau complet. */
+    temp = *a;
+    *a = *b;
+    *b = temp;
+}
+void trier_classement(Joueur joueurs[], int nb_joueurs) {
+    int i;
+    int j;
+    int meilleur;
+
+    for (i = 0; i < nb_joueurs - 1; i++) {
+        meilleur = i;
+
+        for (j = i + 1; j < nb_joueurs; j++) {
+            if (joueur_est_mieux_classe(joueurs[j], joueurs[meilleur]) == 1) {
+                meilleur = j;
+            }
+        }
+
+        if (meilleur != i) {
+            echanger_joueurs(&joueurs[i], &joueurs[meilleur]);
+        }
+    }
+}
+void afficher_classement_depuis_fichier(void) {
+    Joueur historique[MAX_JOUEURS];
+    int nb_historique;
+
+    nb_historique = charger_historique(historique);
+    afficher_classement(historique, nb_historique);
+void afficher_classement(Joueur historique[], int nb_historique) {
+    int i;
+
+    if (nb_historique == 0) {
+        printf("\nAucun joueur dans l'historique.\n");
+    } else {
+        /*
+            On trie directement le tableau historique.
+            C'est plus simple a comprendre :
+            apres le tri, le meilleur joueur est en premier.
+        */
+        trier_classement(historique, nb_historique);
+
+        printf("\nCLASSEMENT GENERAL\n");
+        printf("------------------\n");
+
+        for (i = 0; i < nb_historique; i++) {
+            printf("%d. %s\n", i + 1, historique[i].nom);
+            printf("   Victoires : %d\n", historique[i].victoires);
+            printf("   Parties : %d\n", historique[i].parties);
+            printf("   Cases parcourues : %d\n", historique[i].cases_parcourues);
+            printf("\n");
+        }
+    }
+}
+void afficher_resume_partie(char noms_partie[][MAX_NOM],
+                            int nb_joueurs_partie,
+                            char gagnant[],
+                            int cases_partie[]) {
+    int i;
+
+    printf("\n===========================\n");
+    printf("      RESUME DE PARTIE\n");
+    printf("===========================\n");
+    printf("Gagnant : %s\n\n", gagnant);
+
+    printf("Joueurs de la partie :\n");
+
+    for (i = 0; i < nb_joueurs_partie; i++) {
+        printf("- %s : %d cases parcourues\n",
+               noms_partie[i],
+               cases_partie[i]);
+    }
+
+    printf("===========================\n");
+}
+void afficher_plateau_complet(char plateau[TAILLE_GRILLE][TAILLE_GRILLE]) {
+    int i;
+    int j;
+
+    printf("\n===========================\n");
+    printf("   PLATEAU COMPLET DEVOILE\n");
+    printf("===========================\n\n");
+
+    for (i = 0; i < TAILLE_GRILLE; i++) {
+        for (j = 0; j < TAILLE_GRILLE; j++) {
+            printf(" %c ", plateau[i][j]);
+        }
+        printf("\n");
+    }
+}
+void afficher_fin_partie(char gagnant[], int duree_secondes) {
+    int minutes;
+    int secondes;
+
+    minutes = duree_secondes / 60;
+    secondes = duree_secondes % 60;
+
+    printf("\n===========================\n");
+    printf("       FIN DE PARTIE\n");
+    printf("===========================\n");
+    printf("Vainqueur : %s\n", gagnant);
+    printf("Duree     : %02d min %02d sec\n", minutes, secondes);
+    printf("===========================\n");
+}
+int demander_rejouer(void) {
+    int choix;
+    int rejouer;
+
+    printf("\nVoulez-vous rejouer ?\n");
+    printf("1. Oui, avec les memes joueurs\n");
+    printf("2. Non, retour au menu\n");
+
+    choix = lire_entier("Votre choix : ", 1, 2);
+
+    if (choix == 1) {
+        rejouer = 1;
+    } else {
+        rejouer = 0;
+    }
+
+    return rejouer;
+}
+}
 
