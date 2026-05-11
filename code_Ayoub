@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-/* 
+/*  
    CONSTANTES : définissent les valeurs fixes utilisées dans le programme
  */
 #define MAX_JOUEURS 100      /* Nombre maximum de joueurs stockés */
