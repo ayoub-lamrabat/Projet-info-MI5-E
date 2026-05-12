@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
- 
+#include <errno.h>
+
 /*  
    CONSTANTES : définissent les valeurs fixes utilisées dans le programme
  */
@@ -76,7 +77,7 @@ int lire_entier(char message[], int min, int max) {
 /* 
    FONCTION : lire_nom()
    
-   Objectif : lire et valider le nom d'un joueur
+   Objectif : lire et valider le nom d'un joueur depuis stdin
    
    Paramètres :
    - nom[] : tableau où stocker le nom
@@ -88,6 +89,8 @@ void lire_nom(char nom[], char message[]) {
     int valide = 0;
     while (valide == 0) {
         printf("%s", message);
+        
+        /* fgets lit depuis stdin jusqu'à \n ou nombre max de caractères */
         if (fgets(nom, MAX_NOM, stdin) == NULL) {
             printf("Erreur de saisie.\n");
             continue;
@@ -110,10 +113,10 @@ void lire_nom(char nom[], char message[]) {
 /* 
    FONCTION : extraire_nom()
    
-   Objectif : extraire le nom d'une ligne du fichier
+   Objectif : extraire le nom d'une ligne du fichier (format "Nom: Alice")
    
    Paramètres :
-   - ligne[] : la ligne complète du fichier
+   - ligne[] : la ligne complète du fichier (lue avec fgets)
    - nom[] : tableau où stocker le nom
    
    Retour : aucun
@@ -121,6 +124,7 @@ void lire_nom(char nom[], char message[]) {
 void extraire_nom(char ligne[], char nom[]) {
     int i = 5, j = 0;
     
+    /* Sauter les 5 premiers caractères ("Nom: ") */
     while (ligne[i] != '\0' && ligne[i] != '\n') {
         nom[j++] = ligne[i++];
     }
@@ -130,12 +134,12 @@ void extraire_nom(char ligne[], char nom[]) {
 /* 
    FONCTION : extraire_nombre()
    
-   Objectif : extraire un nombre d'une ligne du fichier
+   Objectif : extraire un nombre d'une ligne du fichier (format "Parties: 5")
    
    Paramètres :
-   - ligne[] : la ligne complète du fichier
+   - ligne[] : la ligne complète du fichier (lue avec fgets)
    
-   Retour : le nombre trouvé
+   Retour : le nombre trouvé (converti avec atoi)
 */
 int extraire_nombre(char ligne[]) {
     char texte_nombre[20];
@@ -211,37 +215,50 @@ int add_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
 /* 
    FONCTION : lire_joueur_fichier()
    
-   Objectif : lire les données d'un joueur depuis le fichier
+   Objectif : lire les données d'un joueur depuis un fichier ouvert
+   
+   Explication : lit 4 lignes (Nom, Parties, Victoires, Cases) puis la ligne "---"
+   Utilise fgets pour lire ligne par ligne depuis le flux fichier
    
    Paramètres :
-   - fichier : fichier déjà ouvert
-   - joueur : pointeur vers la structure à remplir
+   - fichier : pointeur FILE sur le fichier ouvert en mode "r"
+   - joueur : pointeur vers la structure Joueur à remplir
    
-   Retour : 1 si succès, 0 sinon
+   Retour : 1 si succès, 0 sinon (fin de fichier ou erreur)
 */
 int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
     char ligne[100];
 
+    /* Lecture ligne 1 : Nom */
     if (fgets(ligne, 100, fichier) == NULL) return 0;
     extraire_nom(ligne, joueur->nom);
 
+    /* Lecture ligne 2 : Parties */
     if (fgets(ligne, 100, fichier) == NULL) return 0;
     joueur->parties = extraire_nombre(ligne);
 
+    /* Lecture ligne 3 : Victoires */
     if (fgets(ligne, 100, fichier) == NULL) return 0;
     joueur->victoires = extraire_nombre(ligne);
 
+    /* Lecture ligne 4 : Cases parcourues */
     if (fgets(ligne, 100, fichier) == NULL) return 0;
     joueur->cases_parcourues = extraire_nombre(ligne);
 
-    fgets(ligne, 100, fichier);  /* Lire la ligne "---" */
+    /* Lecture ligne 5 : séparateur "---" */
+    fgets(ligne, 100, fichier);
     return 1;
 }
 
 /* 
    FONCTION : charger_historique()
    
-   Objectif : charger tous les joueurs depuis le fichier
+   Objectif : charger tous les joueurs depuis le fichier de sauvegarde
+   
+   Explication : 
+   - Ouvre le fichier en mode lecture "r" avec fopen
+   - Boucle sur lire_joueur_fichier jusqu'à EOF
+   - Ferme le fichier avec fclose
    
    Paramètres :
    - joueurs[] : tableau où stocker les joueurs
@@ -249,18 +266,22 @@ int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
    Retour : nombre de joueurs chargés
 */
 int charger_historique(Joueur joueurs[]) {
-    FILE *fichier;
+    FILE *fichier = NULL;
     int nb_joueurs = 0;
 
+    /* Ouverture en mode lecture */
     fichier = fopen(FICHIER_STATS, "r");
     if (fichier == NULL) {
+        /* Fichier n'existe pas encore, ce n'est pas une erreur */
         return 0;
     }
 
+    /* Lire chaque joueur jusqu'à EOF ou MAX_JOUEURS */
     while (nb_joueurs < MAX_JOUEURS && lire_joueur_fichier(fichier, &joueurs[nb_joueurs])) {
         nb_joueurs++;
     }
 
+    /* Fermer le fichier pour libérer le buffer */
     fclose(fichier);
     return nb_joueurs;
 }
@@ -270,19 +291,30 @@ int charger_historique(Joueur joueurs[]) {
    
    Objectif : sauvegarder tous les joueurs dans le fichier
    
+   Explication :
+   - Ouvre le fichier en mode écriture "w" avec fopen (crée ou écrase)
+   - Écrit chaque joueur avec fprintf (formaté pour fichier ASCII)
+   - Ferme le fichier avec fclose
+   
    Paramètres :
-   - joueurs[] : tableau des joueurs
+   - joueurs[] : tableau des joueurs à sauvegarder
    - nb_joueurs : nombre de joueurs
    
    Retour : aucun
 */
 void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
-    FILE *fichier = fopen(FICHIER_STATS, "w");
+    FILE *fichier = NULL;
+
+    /* Ouverture en mode écriture (crée ou écrase le fichier) */
+    fichier = fopen(FICHIER_STATS, "w");
     if (fichier == NULL) {
         printf("Erreur : impossible d'ouvrir le fichier de sauvegarde.\n");
+        printf("Code d'erreur = %d\n", errno);
+        printf("Message d'erreur = %s\n", strerror(errno));
         return;
     }
 
+    /* Écriture formatée de chaque joueur */
     for (int i = 0; i < nb_joueurs; i++) {
         fprintf(fichier, "Nom: %s\n", joueurs[i].nom);
         fprintf(fichier, "Parties: %d\n", joueurs[i].parties);
@@ -290,6 +322,8 @@ void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
         fprintf(fichier, "Cases: %d\n", joueurs[i].cases_parcourues);
         fprintf(fichier, "---\n");
     }
+
+    /* Fermer le fichier pour libérer le buffer */
     fclose(fichier);
 }
 
@@ -488,7 +522,7 @@ void afficher_fin_partie(char gagnant[], int duree_secondes) {
    Objectif : récupérer le timestamp actuel
    
    Paramètres : aucun
-   Retour : timestamp en secondes
+   Retour : timestamp en secondes (time_t)
 */
 time_t obtenir_temps(void) {
     return time(NULL);
@@ -503,7 +537,7 @@ time_t obtenir_temps(void) {
    - debut : timestamp de début
    - fin : timestamp de fin
    
-   Retour : durée en secondes
+   Retour : durée en secondes (int)
 */
 int calculer_duree(time_t debut, time_t fin) {
     return (int)difftime(fin, debut);
