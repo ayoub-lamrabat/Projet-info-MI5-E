@@ -101,6 +101,49 @@ return DEFAITE;
 return VICTOIRE; //si la case n'est pas un monstre 
 }
 
+void logique_portail(int *joueur_x, int *joueur_y){ // x represente la ligne, y la colonne.la fonction recoit l'adresse des coordonées d'un joueur pour le changer de place, pas seulement sa copie (ino ce serai pas modifiable)
+printf("Portail Magique ! Choisissez vos nouvelles coordonnes :\n"); 
+do {
+printf("Nouvelle ligne :"); 
+scanf("%d, joueur_x); 
+printf("Nouvelle colonne :\n"); 
+scanf("%d, joueur_y); 
+} while(*joueur_x <0 || *joueur_x > 4 || *joueur_y < 0 || *joueur_y >4 ); // on ne sort pas de la matrice 5x5 
+
+printf("Teleportation reussie en [%d][%d] \n, *joueur_x,*joueur_y); 
+}
 
 
 
+void logique_totem(char plateau[5][5], int *actuelle_x, int *actuelle_y, int depart_x, int depart_y) {
+int cible_x, clible_y // les cases avec lesquelles ont souhaite echanger le totem
+
+printf(" Il s'agit d'un totem de transmutation, veuillez échanger cette case avec une autre :\n); 
+printf("La ligne de la case à échanger est :\n); 
+scanf("%d", &cible_x); 
+printf("Colonne de la case a echanger est :\n); 
+scanf("%d", &cible_y);
+char temp =plateau[*actuelle_x][*actuelle_y];
+plateau [*actuelle_x][*actuelle_y]= plateau[cible_x][cible_y];
+plateau[cible_x][cible_y]= temp; // on utilise la méthode du swap pour intervertir les cases (très souvent utilisée dans les algo de tri)
+*actuelle_x= depart_x;
+*actuelle_y=depart_y;// position de depart definie au debut de la partie ne bouge pas tandis que actuelle bouge au fil de la partie 
+printf("Les cases ont ete echangées, retour à la case depart : [%d][%d]\n, *actuelle_x, *actuelle_y);//car c'est le pion actuelle qu'on déplace
+
+}
+
+int verifier_victoire(int *trouver_coffre, in *trouve_arme, char case_actuelle, char arme_recherche){
+if(case_actuelle == 'C'){
+printf("Bravo ! Vous venez de trouver un coffre au tresor.\n); 
+*trouver_coffre=1; // mettre a jour la variable avec un pointeur 
+
+if(case_actuelle== arme_recherche) {
+printf( Bravo ! Vous venez de trouver votre arme antique :\n");
+*trouver_arme=1
+}
+if(*trouver_coffre == 1 && *trouve_arme == 1 ){
+printf ("Vicoire totale ! Vous etes le vainqueur de la partie : \n); 
+return 1; 
+}
+return 0; // le jeu continue 
+}
