@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-
+ 
 /*  
    CONSTANTES : définissent les valeurs fixes utilisées dans le programme
  */
