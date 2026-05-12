@@ -26,26 +26,18 @@ typedef struct {
    
    Objectif : nettoyer le clavier après une entrée incorrecte
    
-   Explication : quand l'utilisateur tape du texte au lieu d'un nombre,
-   les caractères restent dans la mémoire. Cette fonction les efface.
-   
    Paramètres : aucun
    Retour : aucun 
 */
 void vider_buffer(void) {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF) {
-        /* Lire et ignorer chaque caractère jusqu'à la fin de ligne */
-    }
+    while ((c = getchar()) != '\n' && c != EOF);
 }
 
 /* 
    FONCTION : lire_entier()
    
    Objectif : demander à l'utilisateur d'entrer un nombre entre min et max
-   
-   Explication : cette fonction contrôle que l'utilisateur entre bien un nombre
-   et qu'il est dans l'intervalle [min, max]. Elle redemande si ce n'est pas bon.
    
    Paramètres :
    - message[] : le texte à afficher avant de lire le nombre
@@ -82,71 +74,87 @@ int lire_entier(char message[], int min, int max) {
 }
 
 /* 
-   FONCTION : recuperer_nom()
+   FONCTION : lire_nom()
    
-   Objectif : extraire le nom d'une ligne de texte du fichier
-   
-   Explication : le fichier contient des lignes comme "Nom: Alice"
-   Cette fonction récupère le texte après "Nom: " et supprime le \n
+   Objectif : lire et valider le nom d'un joueur
    
    Paramètres :
-   - ligne[] : la ligne complète du fichier
-   - nom[] : tableau où on va stocker le nom trouvé
+   - nom[] : tableau où stocker le nom
+   - message[] : message à afficher
    
-   Retour : aucun (nom[] est modifié directement)
+   Retour : aucun
 */
-void recuperer_nom(char ligne[], char nom[]) {
-    int i, j;
-    
-    i = 5;  /* On saute les 5 premiers caractères ("Nom: ") */
-    j = 0;  /* Position où on écrit dans le tableau nom[] */
-
-    while (ligne[i] != '\0' && ligne[i] != '\n') {
-        nom[j] = ligne[i];
-        i++;
-        j++;
+void lire_nom(char nom[], char message[]) {
+    int valide = 0;
+    while (valide == 0) {
+        printf("%s", message);
+        if (fgets(nom, MAX_NOM, stdin) == NULL) {
+            printf("Erreur de saisie.\n");
+            continue;
+        }
+        
+        /* Remplacer le \n par \0 */
+        if (nom[strlen(nom) - 1] == '\n') {
+            nom[strlen(nom) - 1] = '\0';
+        }
+        
+        /* Vérifier que le nom n'est pas vide */
+        if (strlen(nom) > 0) {
+            valide = 1;
+        } else {
+            printf("Erreur : le nom ne peut pas etre vide.\n");
+        }
     }
-    nom[j] = '\0';  /* Terminer la chaîne avec '\0' */
 }
 
 /* 
-   FONCTION : recuperer_nombre_depuis_ligne()
+   FONCTION : extraire_nom()
    
-   Objectif : extraire un nombre d'une ligne stockée dans le fichier
+   Objectif : extraire le nom d'une ligne du fichier
    
-   Explication : le fichier contient des lignes comme "Parties: 5"
-   Cette fonction récupère le nombre 5 après le ":"
+   Paramètres :
+   - ligne[] : la ligne complète du fichier
+   - nom[] : tableau où stocker le nom
+   
+   Retour : aucun
+*/
+void extraire_nom(char ligne[], char nom[]) {
+    int i = 5, j = 0;
+    
+    while (ligne[i] != '\0' && ligne[i] != '\n') {
+        nom[j++] = ligne[i++];
+    }
+    nom[j] = '\0';
+}
+
+/* 
+   FONCTION : extraire_nombre()
+   
+   Objectif : extraire un nombre d'une ligne du fichier
    
    Paramètres :
    - ligne[] : la ligne complète du fichier
    
-   Retour : le nombre trouvé dans la ligne
+   Retour : le nombre trouvé
 */
-int recuperer_nombre_depuis_ligne(char ligne[]) {
+int extraire_nombre(char ligne[]) {
     char texte_nombre[20];
-    int i, j;
-
-    i = 0;
-    j = 0;
+    int i = 0, j = 0;
 
     /* Trouver le caractère ':' */
-    while (ligne[i] != ':' && ligne[i] != '\0') {
-        i++;
-    }
-
-    /* Sauter le ':' et l'espace après */
+    while (ligne[i] != ':' && ligne[i] != '\0') i++;
+    
+    /* Sauter le ':' et l'espace */
     if (ligne[i] == ':') i++;
     if (ligne[i] == ' ') i++;
 
-    /* Copier les chiffres dans texte_nombre */
+    /* Copier les chiffres */
     while (ligne[i] != '\0' && ligne[i] != '\n') {
-        texte_nombre[j] = ligne[i];
-        i++;
-        j++;
+        texte_nombre[j++] = ligne[i++];
     }
     texte_nombre[j] = '\0';
 
-    return atoi(texte_nombre);  /* Transformer la chaîne en nombre */
+    return atoi(texte_nombre);
 }
 
 /*
@@ -154,46 +162,40 @@ int recuperer_nombre_depuis_ligne(char ligne[]) {
    
    Objectif : trouver la position d'un joueur dans le tableau
    
-   Explication : on parcourt tous les joueurs et on compare les noms.
-   Si on trouve une correspondance, on retourne sa position.
-   
    Paramètres :
    - joueurs[] : tableau de tous les joueurs
-   - nb_joueurs : nombre de joueurs dans le tableau
+   - nb_joueurs : nombre de joueurs
    - nom[] : nom du joueur à chercher
    
-   Retour : position du joueur (0, 1, 2...) ou -1 s'il n'existe pas
+   Retour : position du joueur ou -1 s'il n'existe pas
 */
 int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
-    int i;
-    for (i = 0; i < nb_joueurs; i++) {
+    for (int i = 0; i < nb_joueurs; i++) {
         if (strcmp(joueurs[i].nom, nom) == 0) {
-            return i;  /* Joueur trouvé */
+            return i;
         }
     }
-    return -1;  /* Joueur non trouvé */
+    return -1;
 }
 
 /* 
-   FONCTION : ajouter_joueur_si_absent()
+   FONCTION : add_joueur()
    
    Objectif : ajouter un nouveau joueur s'il n'existe pas déjà
    
-   Explication : si le joueur existe, on retourne sa position.
-   Sinon, on le crée et on augmente le nombre de joueurs.
-   
    Paramètres :
-   - joueurs[] : tableau de tous les joueurs
-   - nb_joueurs : pointeur vers le nombre de joueurs (car on va le modifier)
+   - joueurs[] : tableau des joueurs
+   - nb_joueurs : pointeur vers le nombre de joueurs
    - nom[] : nom du nouveau joueur
    
-   Retour : position du joueur (existant ou nouvellement créé)
+   Retour : position du joueur (existant ou créé)
 */
-int ajouter_joueur_si_absent(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+int add_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
     int position = chercher_joueur(joueurs, *nb_joueurs, nom);
 
     if (position == -1 && *nb_joueurs < MAX_JOUEURS) {
-        strcpy(joueurs[*nb_joueurs].nom, nom);
+        strncpy(joueurs[*nb_joueurs].nom, nom, MAX_NOM - 1);
+        joueurs[*nb_joueurs].nom[MAX_NOM - 1] = '\0';
         joueurs[*nb_joueurs].parties = 0;
         joueurs[*nb_joueurs].victoires = 0;
         joueurs[*nb_joueurs].cases_parcourues = 0;
@@ -207,33 +209,30 @@ int ajouter_joueur_si_absent(Joueur joueurs[], int *nb_joueurs, char nom[]) {
 }
 
 /* 
-   FONCTION : lire_un_joueur_dans_fichier()
+   FONCTION : lire_joueur_fichier()
    
-   Objectif : lire les données d'un joueur complètes depuis le fichier
-   
-   Explication : le fichier contient 4 lignes par joueur (nom, parties, 
-   victoires, cases), suivi d'une ligne "---" qui les sépare.
+   Objectif : lire les données d'un joueur depuis le fichier
    
    Paramètres :
    - fichier : fichier déjà ouvert
    - joueur : pointeur vers la structure à remplir
    
-   Retour : 1 si la lecture a réussi, 0 sinon
+   Retour : 1 si succès, 0 sinon
 */
-int lire_un_joueur_dans_fichier(FILE *fichier, Joueur *joueur) {
+int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
     char ligne[100];
 
     if (fgets(ligne, 100, fichier) == NULL) return 0;
-    recuperer_nom(ligne, joueur->nom);
+    extraire_nom(ligne, joueur->nom);
 
     if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->parties = recuperer_nombre_depuis_ligne(ligne);
+    joueur->parties = extraire_nombre(ligne);
 
     if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->victoires = recuperer_nombre_depuis_ligne(ligne);
+    joueur->victoires = extraire_nombre(ligne);
 
     if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->cases_parcourues = recuperer_nombre_depuis_ligne(ligne);
+    joueur->cases_parcourues = extraire_nombre(ligne);
 
     fgets(ligne, 100, fichier);  /* Lire la ligne "---" */
     return 1;
@@ -242,15 +241,12 @@ int lire_un_joueur_dans_fichier(FILE *fichier, Joueur *joueur) {
 /* 
    FONCTION : charger_historique()
    
-   Objectif : charger tous les joueurs depuis le fichier de sauvegarde
-   
-   Explication : on ouvre le fichier et on lit chaque joueur un par un
-   jusqu'à la fin du fichier ou jusqu'à avoir lu MAX_JOUEURS joueurs.
+   Objectif : charger tous les joueurs depuis le fichier
    
    Paramètres :
-   - joueurs[] : tableau où on va stocker les joueurs chargés
+   - joueurs[] : tableau où stocker les joueurs
    
-   Retour : nombre de joueurs chargés depuis le fichier
+   Retour : nombre de joueurs chargés
 */
 int charger_historique(Joueur joueurs[]) {
     FILE *fichier;
@@ -258,10 +254,10 @@ int charger_historique(Joueur joueurs[]) {
 
     fichier = fopen(FICHIER_STATS, "r");
     if (fichier == NULL) {
-        return 0;  /* Le fichier n'existe pas encore */
+        return 0;
     }
 
-    while (nb_joueurs < MAX_JOUEURS && lire_un_joueur_dans_fichier(fichier, &joueurs[nb_joueurs])) {
+    while (nb_joueurs < MAX_JOUEURS && lire_joueur_fichier(fichier, &joueurs[nb_joueurs])) {
         nb_joueurs++;
     }
 
@@ -272,14 +268,11 @@ int charger_historique(Joueur joueurs[]) {
 /* 
    FONCTION : sauvegarder_historique()
    
-   Objectif : écrire tous les joueurs dans le fichier de sauvegarde
-   
-   Explication : on ouvre le fichier en écriture (ce qui efface l'ancien contenu)
-   puis on écrit chaque joueur avec ses statistiques.
+   Objectif : sauvegarder tous les joueurs dans le fichier
    
    Paramètres :
-   - joueurs[] : tableau des joueurs à sauvegarder
-   - nb_joueurs : nombre de joueurs à sauvegarder
+   - joueurs[] : tableau des joueurs
+   - nb_joueurs : nombre de joueurs
    
    Retour : aucun
 */
@@ -301,31 +294,28 @@ void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
 }
 
 /* 
-   FONCTION : mettre_a_jour_historique()
+   FONCTION : maj_historique()
    
-   Objectif : mettre à jour les statistiques après la fin d'une partie
-   
-   Explication : on ajoute 1 au nombre de parties jouées pour tous les joueurs,
-   on augmente les cases parcourues, et on ajoute 1 victoire au gagnant.
+   Objectif : mettre à jour les statistiques après une partie
    
    Paramètres :
-   - historique[] : tableau des joueurs (statistiques globales)
+   - historique[] : tableau des joueurs
    - nb_historique : pointeur vers le nombre de joueurs
-   - noms_partie[] : noms des joueurs qui ont participé
-   - nb_joueurs_partie : nombre de joueurs dans cette partie
-   - gagnant[] : nom du joueur qui a gagné
-   - cases_partie[] : nombre de cases parcourues par chaque joueur
+   - noms_partie[] : noms des joueurs de la partie
+   - nb_joueurs_partie : nombre de joueurs
+   - gagnant[] : nom du gagnant
+   - cases_partie[] : cases parcourues par chaque joueur
    
    Retour : aucun
 */
-void mettre_a_jour_historique(Joueur historique[],
-                              int *nb_historique,
-                              char noms_partie[][MAX_NOM],
-                              int nb_joueurs_partie,
-                              char gagnant[],
-                              int cases_partie[]) {
+void maj_historique(Joueur historique[],
+                    int *nb_historique,
+                    char noms_partie[][MAX_NOM],
+                    int nb_joueurs_partie,
+                    char gagnant[],
+                    int cases_partie[]) {
     for (int i = 0; i < nb_joueurs_partie; i++) {
-        int position = ajouter_joueur_si_absent(historique, nb_historique, noms_partie[i]);
+        int position = add_joueur(historique, nb_historique, noms_partie[i]);
 
         if (position != -1) {
             historique[position].parties++;
@@ -338,22 +328,22 @@ void mettre_a_jour_historique(Joueur historique[],
 }
 
 /* 
-   FONCTION : joueur_est_mieux_classe()
+   FONCTION : joueur_superieur()
    
-   Objectif : comparer deux joueurs pour savoir qui est le meilleur
+   Objectif : comparer deux joueurs selon le critère de classement
    
-   Explication : le critère de classement est :
-   1. Le plus de victoires
-   2. Si victoires égales, le moins de parties jouées
-   3. Si toujours égal, le plus de cases parcourues
+   Critères :
+   1. Plus de victoires
+   2. Si égal, moins de parties
+   3. Si égal, plus de cases
    
    Paramètres :
    - a : premier joueur
    - b : deuxième joueur
    
-   Retour : 1 si a est mieux classé que b, 0 sinon
+   Retour : 1 si a > b, 0 sinon
 */
-int joueur_est_mieux_classe(Joueur a, Joueur b) {
+int joueur_superieur(Joueur a, Joueur b) {
     if (a.victoires > b.victoires) return 1;
     if (a.victoires == b.victoires && a.parties < b.parties) return 1;
     if (a.victoires == b.victoires && a.parties == b.parties && a.cases_parcourues > b.cases_parcourues) return 1;
@@ -361,50 +351,28 @@ int joueur_est_mieux_classe(Joueur a, Joueur b) {
 }
 
 /* 
-   FONCTION : echanger_joueurs()
-   
-   Objectif : inverser les positions de deux joueurs dans un tableau
-   
-   Explication : on utilise une variable temporaire pour échanger le contenu
-   des deux structures de données.
-   
-   Paramètres :
-   - a : pointeur vers le premier joueur
-   - b : pointeur vers le deuxième joueur
-   
-   Retour : aucun
-*/
-void echanger_joueurs(Joueur *a, Joueur *b) {
-    Joueur temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-/* 
    FONCTION : trier_classement()
    
-   Objectif : trier les joueurs du meilleur au moins bon
-   
-   Explication : on utilise l'algorithme de tri par sélection.
-   On trouve le meilleur joueur et on le met en première position,
-   puis le deuxième meilleur, etc.
+   Objectif : trier les joueurs par classement (meilleur au moins bon)
    
    Paramètres :
-   - joueurs[] : tableau des joueurs à trier
+   - joueurs[] : tableau à trier
    - nb_joueurs : nombre de joueurs
    
-   Retour : aucun (le tableau est modifié directement)
+   Retour : aucun
 */
 void trier_classement(Joueur joueurs[], int nb_joueurs) {
     for (int i = 0; i < nb_joueurs - 1; i++) {
         int meilleur = i;
         for (int j = i + 1; j < nb_joueurs; j++) {
-            if (joueur_est_mieux_classe(joueurs[j], joueurs[meilleur])) {
+            if (joueur_superieur(joueurs[j], joueurs[meilleur])) {
                 meilleur = j;
             }
         }
         if (meilleur != i) {
-            echanger_joueurs(&joueurs[i], &joueurs[meilleur]);
+            Joueur temp = joueurs[i];
+            joueurs[i] = joueurs[meilleur];
+            joueurs[meilleur] = temp;
         }
     }
 }
@@ -412,9 +380,7 @@ void trier_classement(Joueur joueurs[], int nb_joueurs) {
 /* 
    FONCTION : afficher_classement()
    
-   Objectif : afficher la liste des joueurs triée par classement
-   
-   Explication : on trie les joueurs, puis on les affiche avec leurs stats.
+   Objectif : afficher le classement des joueurs
    
    Paramètres :
    - historique[] : tableau des joueurs
@@ -444,15 +410,13 @@ void afficher_classement(Joueur historique[], int nb_historique) {
 /* 
    FONCTION : afficher_resume_partie()
    
-   Objectif : afficher un résumé de la partie qui vient de se terminer
-   
-   Explication : on affiche le gagnant et les cases parcourues par chaque joueur.
+   Objectif : afficher le résumé de la partie
    
    Paramètres :
    - noms_partie[] : noms des joueurs
-   - nb_joueurs_partie : nombre de joueurs dans la partie
+   - nb_joueurs_partie : nombre de joueurs
    - gagnant[] : nom du gagnant
-   - cases_partie[] : cases parcourues par chaque joueur
+   - cases_partie[] : cases parcourues
    
    Retour : aucun
 */
@@ -475,13 +439,10 @@ void afficher_resume_partie(char noms_partie[][MAX_NOM],
 /* 
    FONCTION : afficher_plateau_complet()
    
-   Objectif : afficher le plateau de jeu complètement révélé
-   
-   Explication : après la fin de la partie, on montre le plateau entier
-   avec tous les symboles visibles.
+   Objectif : afficher le plateau complètement révélé
    
    Paramètres :
-   - plateau[TAILLE_GRILLE][TAILLE_GRILLE] : la grille du jeu
+   - plateau[TAILLE_GRILLE][TAILLE_GRILLE] : la grille
    
    Retour : aucun
 */
@@ -501,14 +462,11 @@ void afficher_plateau_complet(char plateau[TAILLE_GRILLE][TAILLE_GRILLE]) {
 /* 
    FONCTION : afficher_fin_partie()
    
-   Objectif : afficher l'écran de fin de partie avec le gagnant et la durée
-   
-   Explication : on affiche le nom du gagnant et on convertit la durée
-   en minutes et secondes pour mieux l'afficher.
+   Objectif : afficher l'écran de fin de partie
    
    Paramètres :
    - gagnant[] : nom du gagnant
-   - duree_secondes : durée totale de la partie en secondes
+   - duree_secondes : durée en secondes
    
    Retour : aucun
 */
@@ -522,4 +480,31 @@ void afficher_fin_partie(char gagnant[], int duree_secondes) {
     printf("Vainqueur : %s\n", gagnant);
     printf("Duree     : %02d min %02d sec\n", minutes, secondes);
     printf("===========================\n");
+}
+
+/* 
+   FONCTION : obtenir_temps()
+   
+   Objectif : récupérer le timestamp actuel
+   
+   Paramètres : aucun
+   Retour : timestamp en secondes
+*/
+time_t obtenir_temps(void) {
+    return time(NULL);
+}
+
+/* 
+   FONCTION : calculer_duree()
+   
+   Objectif : calculer la durée entre deux timestamps
+   
+   Paramètres :
+   - debut : timestamp de début
+   - fin : timestamp de fin
+   
+   Retour : durée en secondes
+*/
+int calculer_duree(time_t debut, time_t fin) {
+    return (int)difftime(fin, debut);
 }
