@@ -9,16 +9,17 @@
 // Dans fichier entites.h :
 #define TAILLE 5
 typedef struct {
-    char type;      // 'B' Basilic, 'Z' Zombie, 'T' Troll, 'H' Harpie, 'E' Épée, 'B' Bâton, 'D' Dague, 'G' Grimoire, 'P' Portail, 'T' Totem, 'C' Coffre.
-    int visible;    // 0 = cachée (brouillard), 1 = révélée
+    char type;           // 'B' Basilic, 'Z' Zombie, 'T' Troll, 'H' Harpie, 'E' Epée, 'F' Bâton, 'D' Dague, 'G' Grimoire, 'P' Portail, 'T' Totem, 'C' Coffre.
+    int visible;         // 0 = cachée (brouillard), 1 = révélée
 } Case;
 
 typedef struct {
-    int x, y;           // Position actuelle
-    int x_dep, y_dep;   // Position de départ
+    int x, y;            // Position actuelle
+    int x_dep, y_dep;    // Position de départ
     char nom[50];
+    int classe;
     int a_trouve_coffre; // Au début = 0 pour tous les joueurs. Pendant le jeu, si un joueur tombe sur une case 'C' (Coffre), alors variable = 1.
-    int a_trouve_arme; // Au début = 0. Pendant le jeu, si le Guerrier tombe sur la case 'E' (Épée de feu), a_trouve_arme devient = 1.
+    int a_trouve_arme;   // Au début = 0. Pendant le jeu, si le Guerrier tombe sur la case 'E' (Épée de feu), a_trouve_arme devient = 1.
 } Joueur;
 
 
@@ -146,23 +147,35 @@ void gerer_tour(Joueur *j, Case plateau[TAILLE][TAILLE]) {
        
         // Si c'est un monstre (B, Z, T, H)
         if (type_case == 'B' || type_case == 'Z' || type_case == 'T' || type_case == 'H') {
-            int resultat = resoudre_combat(arme, type_case);
-            if (resultat == 0) { // DEFAITE
+            if (resoudre_combat(arme, type_case) == 0) { // Défaite
                 printf("Vous repartez au debut...\n");
                 j->x = j->x_dep;
                 j->y = j->y_dep;
-                // Optionnel : remettre les cases en face cachée (selon les règles)
-                tour_fini = 1;
-            }
-            // Si VICTOIRE, on ne met pas tour_fini = 1, donc il peut rejouer !
+                // Selon le sujet : si on meurt, on remet tout face cachée
+                for(int r=0; r<TAILLE; r++) for(int c=0; c<TAILLE; c++) plateau[r][c].visible = 0;
+                tour_fini = 1;   // Si VICTOIRE, on ne met pas tour_fini = 1, donc il peut rejouer !
         }
+        
         else if (type_case == 'M') { // Totem Transmutation
-            printf("Totem ! Les cartes bougent...\n");
-            // Appeler fonction de mélange d'Aida
-            j->x = j->x_dep;
-            j->y = j->y_dep;
-            tour_fini = 1;
+    printf("Totem ! Les cartes bougent et vous rentrez chez vous...\n");
+    
+    // 1. On appelle la fonction d'Aida pour mélanger
+    // melanger_plateau(plateau); A VERIFIER
+
+    // 2. On renvoie le joueur à sa case de départ
+    j->x = j->x_dep;
+    j->y = j->y_dep;
+
+    // 3. On remet tout le plateau dans le noir (Brouillard de guerre)
+    for(int r = 0; r < TAILLE; r++) {
+        for(int c = 0; c < TAILLE; c++) {
+            plateau[r][c].visible = 0;
         }
+    } // Fin de la boucle for
+
+    // 4. On indique que le tour est fini APRES avoir tout caché
+    tour_fini = 1; 
+}
       
        //Il y a 2 coffres sur le plateau. N'importe quel joueur peut les ramasser.
        if (type_case == 'C') {
