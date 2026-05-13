@@ -89,7 +89,7 @@ void lire_nom(char nom[], char message[]) {
         printf("%s", message);
         
         /* fgets lit depuis stdin jusqu'à \n ou nombre max de caractères */
-        if (fgets(nom, MAX_NOM, stdin) == NULL) {
+        if (fgets(nom, MAX_NOM, stdin) == NULL) { /*lire ce que l'utilisateur tape au clavier.*/
             printf("Erreur de saisie.\n");
             continue;
         }
@@ -172,7 +172,7 @@ int extraire_nombre(char ligne[]) {
 */
 int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
     for (int i = 0; i < nb_joueurs; i++) {
-        if (strcmp(joueurs[i].nom, nom) == 0) {
+        if (strcmp(joueurs[i].nom, nom) == 0) {/*Cette fonction permet de comparer deux chaînes de caractères et de savoir si la première est inférieure, égale ou supérieure à la seconde*/
             return i;
         }
     }
@@ -317,7 +317,7 @@ void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
     for (int i = 0; i < nb_joueurs; i++) {
         fprintf(fichier, "Nom: %s\n", joueurs[i].nom);
         fprintf(fichier, "Parties: %d\n", joueurs[i].parties);
-        fprintf(fichier, "Victoires: %d\n", joueurs[i].victoires);
+        fprintf(fichier, "Victoires: %d\n", joueurs[Cette fonction permet de comparer deux chaînes de caractères et de savoir si la première est inférieure, égale ou supérieure à la secondei].victoires);
         fprintf(fichier, "Cases: %d\n", joueurs[i].cases_parcourues);
         fprintf(fichier, "---\n");
     }
