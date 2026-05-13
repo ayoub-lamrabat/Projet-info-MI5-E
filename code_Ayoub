@@ -28,7 +28,9 @@ typedef struct {
 */
 void vider_buffer(void) {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF);
+    while ((c = getchar()) != '\n' && c != EOF){
+
+    }
 }
 
 /* 
@@ -140,7 +142,8 @@ int extraire_nombre(char ligne[]) {
     int i = 0, j = 0;
 
     /* Trouver le caractère ':' */
-    while (ligne[i] != ':' && ligne[i] != '\0') i++;
+    while (ligne[i] != ':' && ligne[i] != '\0'){
+    i++;}
     
     /* Sauter le ':' et l'espace */
     if (ligne[i] == ':') i++;
