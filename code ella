@@ -1,1 +1,222 @@
-code ella
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+
+
+//1. Les Structures et le Moteur de Rendu (UI). Pour gérer le "brouillard de guerre", on ne peut pas juste utiliser un tableau de caractères. Il faut savoir si la case est révélée ou non.
+// Dans fichier entites.h :
+#define TAILLE 5
+typedef struct {
+    char type;      // 'B' Basilic, 'Z' Zombie, 'T' Troll, 'H' Harpie, 'E' Épée, 'B' Bâton, 'D' Dague, 'G' Grimoire, 'P' Portail, 'T' Totem, 'C' Coffre.
+    int visible;    // 0 = cachée (brouillard), 1 = révélée
+} Case;
+
+typedef struct {
+    int x, y;           // Position actuelle
+    int x_dep, y_dep;   // Position de départ
+    char nom[50];
+    int a_trouve_coffre; // Au début = 0 pour tous les joueurs. Pendant le jeu, si un joueur tombe sur une case 'C' (Coffre), alors variable = 1.
+    int a_trouve_arme; // Au début = 0. Pendant le jeu, si le Guerrier tombe sur la case 'E' (Épée de feu), a_trouve_arme devient = 1.
+} Joueur;
+
+
+
+//La fonction d'affichage (dans affichage.c) : Elle parcourt le plateau. Si visible vaut 0, on affiche '?'.
+void afficher_plateau(Case plateau[TAILLE][TAILLE], Joueur *j_actuel) {
+    printf("\n--- TOUR DE : %s ---\n", j_actuel->nom);
+    printf("   0   1   2   3   4\n"); // Cette ligne sert uniquement à l'ergonomie (pour aider le joueur). Comme c'est un jeu dans un terminal tout noir, le joueur a du mal à savoir sur quelle colonne il se trouve. En affichant les chiffres 0 1 2 3 4 tout en haut, tu crées une sorte de règle graduée. Si le pion est sous le 0, le joueur sait qu'il est à x = 0. Si le pion est sous le 4, il est tout à droite.
+    for (int i = 0; i < TAILLE; i++) {
+        printf("%d ", i); // Index de ligne
+        for (int j = 0; j < TAILLE; j++) {
+            // Si le joueur est sur la case, on affiche son icône 'P' (Pion)
+            if (i == j_actuel->y && j == j_actuel->x) {
+                printf("[ P ]"); // P pour Pion ou Personnage
+            }
+            // Sinon, si la case est révélée, on montre son contenu
+            else if (plateau[i][j].visible == 1) {
+                printf("[ %c ]", plateau[i][j].type);
+            }
+            // Sinon, c'est le brouillard de guerre
+            else {
+                printf("[ ? ]");
+            }
+        }
+        printf("\n");
+    }
+}
+
+
+
+//2. Moteur de déplacement et Symétrie Radiale.
+//La symétrie radiale signifie que les joueurs partent des points cardinaux opposés. Initialisation des positions (dans moteur.c) :
+//EST-CE QUE ces cases de couleur font partie du plateau de 5x5 ou sont-elles "en dehors" ?!!!!!
+
+void init_positions_depart(Joueur tab_j[], int nb_joueurs) {
+    // Joueur 0 (Case VERTE - Haut/Nord). Elle est au milieu (x=3) sur la ligne du haut (y=0)
+    tab_j[0].x_dep = 3;
+    tab_j[0].y_dep = 0;
+   
+    // Joueur 1 (Case ORANGE - Bas/Sud). Elle est au milieu (x=1) sur la ligne du bas (y=4)
+    if (nb_joueurs > 1) {
+        tab_j[1].x_dep = 1;
+        tab_j[1].y_dep = 4;
+    }
+   
+    // Joueur 2 (Case BLEUE - Gauche/Ouest). Elle est sur la colonne de gauche (x=0) au milieu de la hauteur (y=1)
+    if (nb_joueurs > 2) {
+        tab_j[2].x_dep = 0;
+        tab_j[2].y_dep = 1;
+    }
+   
+    // Joueur 3 (Case BLANCHE - Droite/Est). Elle est sur la colonne de droite (x=4) au milieu de la hauteur (y=3)
+    if (nb_joueurs > 3) {
+        tab_j[3].x_dep = 4;
+        tab_j[3].y_dep = 3;
+    }
+
+    // Initialisation concrète : on place chaque joueur sur sa case de départ
+    for(int i = 0; i < nb_joueurs; i++) {
+        tab_j[i].x = tab_j[i].x_dep;
+        tab_j[i].y = tab_j[i].y_dep;
+       
+
+    }
+}
+
+
+
+//3. Entrées sécurisées (ZQSD). Pour éviter que le programme ne plante si l'utilisateur tape "Bonjour" au lieu de 'Z', on vide le tampon.
+
+char recuperer_direction() {
+    char choix;
+    int valide = 0;
+    while (!valide) {
+        printf("Deplacement (Z=Haut, S=Bas, Q=Gauche, D=Droite) : ");
+        scanf(" %c", &choix); // (L'espace avant %c est CRUCIAL (ignore l'Entrée du tour précédent). JUSTIFICATION: Le problème : Le "Fantôme" de la touche Entrée. Quand tu demandes au joueur de taper une direction : Le joueur tape la lettre 'z'. Ensuite, il appuie sur la touche Entrée (le symbole \n en informatique) pour valider.Le souci, c'est que scanf récupère la lettre 'z', mais il laisse traîner le \n (le retour à la ligne) dans la mémoire tampon du clavier (le "buffer"). Au tour suivant : Quand ton programme arrive à nouveau sur un scanf("%c", &choix), il regarde le tampon. Il y voit le \n qui restait du tour d'avant. Il se dit : "Tiens, il y a déjà un caractère ici !". Il récupère donc le \n automatiquement sans attendre que le joueur tape quoi que ce soit. Résultat : Le programme affiche "Touche invalide" instantanément parce qu'il a cru que l'utilisateur avait tapé "Entrée" au lieu de Z, Q, S ou D. La solution : Le petit espace magique " %c".En mettant un espace juste avant le %c dans ton scanf, tu donnes une instruction très précise au langage C : "S'il te plaît, ignore tous les caractères 'blancs' (espaces, tabulations, et surtout les retours à la ligne \n) jusqu'à ce que tu trouves une vraie lettre ou un vrai chiffre." Voici ce qui se passe avec l'espace : Le \n du tour précédent est toujours là. Le scanf(" %c") arrive. Il voit le \n, il se dit : "C'est un caractère blanc, l'espace dans mon format me dit de l'ignorer". Il le jette à la poubelle.Il attend alors que l'utilisateur tape une nouvelle lettre).
+       
+        if (choix == 'z' || choix == 's' || choix == 'q' || choix == 'd' ||
+            choix == 'Z' || choix == 'S' || choix == 'Q' || choix == 'D') {
+            valide = 1;
+        } else {
+            printf("Touche invalide ! Recommencez.\n");
+        }
+    }
+    return choix;
+}
+
+
+
+//4. La Boucle de Jeu (Game Loop). C'est ici que tu orchestres tout. Voici la logique simplifiée pour gérer le tour d'un joueur.
+
+void gerer_tour(Joueur *j, Case plateau[TAILLE][TAILLE]) {
+    int tour_fini = 0;
+   
+    while (!tour_fini) {
+        afficher_plateau(plateau, j);
+       
+        // 1. Choisir l'arme (Fonction d'Aida)
+        int arme = choisir_arme();
+       
+        // 2. Choisir direction
+        char dir = recuperer_direction();
+        int next_x = j->x;
+        int next_y = j->y;
+
+        // Calculer nouvelle position
+        if (dir == 'z' || dir == 'Z') next_y--;
+        else if (dir == 's' || dir == 'S') next_y++;
+        else if (dir == 'q' || dir == 'Q') next_x--;
+        else if (dir == 'd' || dir == 'D') next_x++;
+
+        // 3. Vérifier limites du plateau
+        if (next_x < 0 || next_x >= TAILLE || next_y < 0 || next_y >= TAILLE) {
+            printf("Mur ! Impossible d'aller par la.\n");
+            continue; // Relance la boucle sans changer de joueur
+        }
+
+        // 4. Action !
+        j->x = next_x;
+        j->y = next_y;
+        plateau[j->y][j->x].visible = 1; // On révèle la case
+
+        // 5. Résoudre combat ou événement (Lien avec le code d'Aida)
+        char type_case = plateau[j->y][j->x].type;
+       
+        // Si c'est un monstre (B, Z, T, H)
+        if (type_case == 'B' || type_case == 'Z' || type_case == 'T' || type_case == 'H') {
+            int resultat = resoudre_combat(arme, type_case);
+            if (resultat == 0) { // DEFAITE
+                printf("Vous repartez au debut...\n");
+                j->x = j->x_dep;
+                j->y = j->y_dep;
+                // Optionnel : remettre les cases en face cachée (selon les règles)
+                tour_fini = 1;
+            }
+            // Si VICTOIRE, on ne met pas tour_fini = 1, donc il peut rejouer !
+        }
+        else if (type_case == 'M') { // Totem Transmutation
+            printf("Totem ! Les cartes bougent...\n");
+            // Appeler fonction de mélange d'Aida
+            j->x = j->x_dep;
+            j->y = j->y_dep;
+            tour_fini = 1;
+        }
+      
+       //Il y a 2 coffres sur le plateau. N'importe quel joueur peut les ramasser.
+       if (type_case == 'C') {
+          printf("INCROYABLE ! %s a trouve un coffre au tresor !\n", j->nom);
+          j->a_trouve_coffre = 1; // On passe le booléen à VRAI
+         // Le tour ne s'arrête pas forcément, le joueur peut continuer à avancer 
+}
+
+       //2. Le Test de l'Arme Antique ('E', 'F', 'D', 'G') : C'est ici que c'est subtil : tu dois vérifier si la lettre de la case
+          correspond à la classe du joueur. Pour que ce soit propre, dans le main on attribue un numéro de classe à chaque joueur (0: Guerrier, 1: Ranger, etc.).
+
+       else if (type_case == 'E' || type_case == 'F' || type_case == 'D' || type_case == 'G') {
+    
+       // On vérifie si c'est la BONNE arme pour CE joueur
+       // Exemple pour le Guerrier qui cherche l'Épée 'E' :
+       if (type_case == 'E' && classe_du_joueur == 0) {
+        printf("BRAVO ! Vous avez trouve l'Epee de Feu !\n");
+        j->a_trouve_arme = 1;
+    } 
+    else if (type_case == 'E' || type_case == 'F' || type_case == 'G' || type_case == 'D') {
+        
+        // On vérifie chaque cas un par un. CAS 1 : L'épée de feu (E) pour le Guerrier (0)
+        if (type_case == 'E' && j->classe == 0) {
+            printf("BRAVO ! Vous avez trouve l'Epee de Feu !\n");
+            j->a_trouve_arme = 1;
+        } 
+        
+        // CAS 2 : Le bâton de contrôle (F) pour le Ranger (1)
+        else if (type_case == 'F' && j->classe == 1) {
+            printf("BRAVO ! Vous avez trouve le Baton de controle !\n");
+            j->a_trouve_arme = 1;
+        } 
+        
+        // CAS 3 : Le grimoire interdit (G) pour le Magicien (2)
+        else if (type_case == 'G' && j->classe == 2) {
+            printf("BRAVO ! Vous avez trouve le Grimoire interdit !\n");
+            j->a_trouve_arme = 1;
+        } 
+        
+        // CAS 4 : La dague de sommeil (D) pour le Voleur (3)
+        else if (type_case == 'D' && j->classe == 3) {
+            printf("BRAVO ! Vous avez trouve la Dague de sommeil !\n");
+            j->a_trouve_arme = 1;
+        } 
+        
+        // CAS 5 : On tombe sur l'arme d'un AUTRE joueur
+        else {
+            printf("Vous avez trouve une arme antique... mais ce n'est pas la votre !\n");
+            printf("Elle brille, mais elle ne vous est d'aucune utilite pour l'instant.\n"); // a_trouve_arme reste à 0.
+        }
+    }
+    else {
+        printf("Vous trouvez une arme antique, mais ce n'est pas la votre. Elle ne vous sert a rien.\n");
+    }
+}
+    }
+}
