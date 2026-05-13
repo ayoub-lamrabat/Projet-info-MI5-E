@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+
 
 void remplir_cartes(char carte[25]){ // fonction pour décider quels personnages se trouvent dans le paquet de carte.
     int i;
