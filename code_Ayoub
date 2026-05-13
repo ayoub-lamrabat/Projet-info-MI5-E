@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <fichier.h>
+
 
  
 
@@ -261,10 +261,12 @@ int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
 */
 int charger_historique(Joueur joueurs[]) {
     FILE *fichier = NULL;
+    char nom[MAX_NOM];
+    int parties,victoires,cases;
     int nb_joueurs = 0;
 
    
-    fichier = fopen(FICHIER_STATS, "r");
+    fichier = fopen("stats.txt", "r");
     if (fichier == NULL) {
         /* Fichier n'existe pas encore, ce n'est pas une erreur */
         return 0;
@@ -300,12 +302,12 @@ void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
     FILE *fichier = NULL;
 
     /* Ouverture en mode écriture (crée ou écrase le fichier) */
-    fichier = fopen(FICHIER_STATS, "w");
+    fichier = fopen("stat.txt", "w");
     if (fichier == NULL) {
         printf("Erreur : impossible d'ouvrir le fichier de sauvegarde.\n");
         printf("Code d'erreur = %d\n", errno);
         printf("Message d'erreur = %s\n", strerror(errno));
-        return;
+        return 1;
     }
 
     /* Écriture formatée de chaque joueur */
