@@ -78,30 +78,30 @@ int choisir_arme() { // choix de l'arme par l'utilisateur
             choix = 0; // verification du scanf
         }
 
-        if(choix < 3 || choix > 6){
+        if(choix < 3 || choix > 6){ // vérifie si le nombre est hors limites
             printf("Nombre invalide !\n");
         }
 
-    } while (choix < 3 || choix > 6);
+    } while (choix < 3 || choix > 6); // continue tant que le choix n'est pas entre 3 et 6
 
-    return choix;
+    return choix; // renvoie le choix valide de l'utilisateur
 }
 
 
 int resoudre_combat(int arme, char monstre) { // logique combat
 
-    if(monstre == 'B') {
-        if(arme == MIROIR) {
+    if(monstre == 'B') { // si le monstre est un Basilic
+        if(arme == MIROIR) { // si l'arme est le miroir
             printf("Victoire contre le Basilic\n");
-            return VICTOIRE;
+            return VICTOIRE; // on renvoie victoire
         } else {
             printf("Pétrifié par le Basilic\n");
-            return DEFAITE;
+            return DEFAITE; // on renvoie défaite
         }
     }
 
-    else if(monstre == 'Z') {
-        if(arme == TORCHE) {
+    else if(monstre == 'Z') {  // si le monstre est un Zombie
+        if(arme == TORCHE) { // la torche est efficace contre les zombies
             printf("Zombie vaincu\n");
             return VICTOIRE;
         } else {
@@ -110,8 +110,8 @@ int resoudre_combat(int arme, char monstre) { // logique combat
         }
     }
 
-    else if(monstre == 'T') {
-        if(arme == HACHE) {
+    else if(monstre == 'T') { // si le monstre est un Troll
+        if(arme == HACHE) { // l'arc est efficace contre la harpie
             printf("Troll vaincu\n");
             return VICTOIRE;
         } else {
@@ -120,7 +120,7 @@ int resoudre_combat(int arme, char monstre) { // logique combat
         }
     }
 
-    else if(monstre == 'H') {
+    else if(monstre == 'H') { // si le monstre est une Harpie
         if(arme == ARC) {
             printf("Harpie vaincue\n");
             return VICTOIRE;
@@ -134,62 +134,65 @@ int resoudre_combat(int arme, char monstre) { // logique combat
 }
 
 
-void logique_portail(int *joueur_x, int *joueur_y) {
+void logique_portail(int *joueur_x, int *joueur_y) { // fonction qui gère la téléportation du joueur via un portail
+
 
     printf("Portail Magique !\n");
 
-    do {
-        printf("Nouvelle ligne : ");
+    do { // boucle qui continue tant que les coordonnées sont invalides
+        printf("Nouvelle ligne : "); // demande la nouvelle position en ligne
         scanf("%d", joueur_x); //  pas de & car joueur_x est déjà une adresse
 
-        printf("Nouvelle colonne : ");
+        printf("Nouvelle colonne : ");  // demande la nouvelle position en colonne
         scanf("%d", joueur_y); // pas de & car joueur_y est déjà une adresse
 
-    } while(*joueur_x < 0 || *joueur_x > 4 || *joueur_y < 0 || *joueur_y > 4);
+    } while(*joueur_x < 0 || *joueur_x > 4 || *joueur_y < 0 || *joueur_y > 4); // vérifie que les coordonnées sont dans les limites du plateau (0 à 4)
 
-    printf("Téléportation en [%d][%d]\n", *joueur_x, *joueur_y);
+    printf("Téléportation en [%d][%d]\n", *joueur_x, *joueur_y); // la nouvelle position du joueur après téléportation
+}
 }
 
 
 
 void logique_totem(char plateau[5][5], int *x, int *y, int depx, int depy) {
 
-    int cx, cy;
+    int cx, cy; // variables pour stocker les coordonnées de la case cible
 
     printf("Totem de transmutation\n");
 
-    printf("Ligne cible : ");
-    scanf("%d", &cx);
+    printf("Ligne cible : "); // demande la ligne de la case cible
+    scanf("%d", &cx);// lecture de la ligne cible
 
-    printf("Colonne cible : ");
-    scanf("%d", &cy);
+    printf("Colonne cible : "); // demande la colonne de la case cible
+    scanf("%d", &cy);// lecture de la colonne cible
 
     if(cx < 0 || cx > 4 || cy < 0 || cy > 4){
         printf("Coordonnées invalides\n");
         return;
     }
 
-    char temp = plateau[*x][*y];
-    plateau[*x][*y] = plateau[cx][cy];
-    plateau[cx][cy] = temp;
+    char temp = plateau[*x][*y]; // sauvegarde la valeur actuelle du joueur dans une variable temporaire
+    plateau[*x][*y] = plateau[cx][cy]; // échange la case du joueur avec la case cible
+    plateau[cx][cy] = temp;  // termine l'échange
 
-    *x = depx;
-    *y = depy;
+    *x = depx; // remet la position du joueur à la position de départ en ligne
+    *y = depy; // remet la position du joueur à la position de départ en colonne 
 
-    printf("Retour au départ [%d][%d]\n", *x, *y);
+    printf("Retour au départ [%d][%d]\n", *x, *y); // affiche la nouvelle position du joueur
 }
 
 
-int verifier_victoire(int *coffre, int *arme_trouvee, char case_actuelle, char arme_recherche){
+int verifier_victoire(int *coffre, int *arme_trouvee, char case_actuelle, char arme_recherche){  // fonction qui vérifie les conditions de victoire 
 
-    if(case_actuelle == 'C'){
+
+    if(case_actuelle == 'C'){ // si la case actuelle contient un coffre
         printf("Coffre trouvé\n");
-        *coffre = 1;
+        *coffre = 1; // on indique que le coffre a été trouvé
     }
 
-    if(case_actuelle == arme_recherche){
+    if(case_actuelle == arme_recherche){ // si les deux conditions sont remplies
         printf("Arme trouvée\n");
-        *arme_trouvee = 1;
+        *arme_trouvee = 1; // on retourne 1 pour signaler la victoire
     }
 
     if(*coffre == 1 && *arme_trouvee == 1){
@@ -197,5 +200,5 @@ int verifier_victoire(int *coffre, int *arme_trouvee, char case_actuelle, char a
         return 1;
     }
 
-    return 0;
+    return 0; // sinon, la partie continue 
 }
