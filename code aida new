@@ -67,13 +67,14 @@ void remplir_plateau(char carte[25], char plateau[5][5]) { // remplir plateau 5x
 #define RIEN 2
 
 int choisir_arme() { // choix de l'arme par l'utilisateur
-    int choix;
+    int choix; // variable qui va stocker le choix de l'utilisateur
+
 
     do {
-        printf("Choisissez votre arme (3 à 6) : ");
+        printf("Choisissez votre arme (3 à 6) : "); 
 
-        if(scanf("%d", &choix) != 1) {
-            while(getchar() != '\n');
+        if(scanf("%d", &choix) != 1) { // vérifie si l'entrée est bien un entier
+            while(getchar() != '\n');// vérifie si l'entrée est bien un entier
             choix = 0; // verification du scanf
         }
 
