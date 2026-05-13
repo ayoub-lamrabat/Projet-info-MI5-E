@@ -94,7 +94,7 @@ char recuperer_direction() {
     char choix;
     int valide = 0;
     while (!valide) {
-        printf("Deplacement (Z=Haut, S=Bas, Q=Gauche, D=Droite) : ");
+        printf("Deplacement (Z=Haut, S=Bas, Q=Gauche, D=Droite) OU Menu (M): ");
         scanf(" %c", &choix); // (L'espace avant %c est CRUCIAL (ignore l'Entrée du tour précédent). JUSTIFICATION: Le problème : Le "Fantôme" de la touche Entrée. Quand tu demandes au joueur de taper une direction : Le joueur tape la lettre 'z'. Ensuite, il appuie sur la touche Entrée (le symbole \n en informatique) pour valider.Le souci, c'est que scanf récupère la lettre 'z', mais il laisse traîner le \n (le retour à la ligne) dans la mémoire tampon du clavier (le "buffer"). Au tour suivant : Quand ton programme arrive à nouveau sur un scanf("%c", &choix), il regarde le tampon. Il y voit le \n qui restait du tour d'avant. Il se dit : "Tiens, il y a déjà un caractère ici !". Il récupère donc le \n automatiquement sans attendre que le joueur tape quoi que ce soit. Résultat : Le programme affiche "Touche invalide" instantanément parce qu'il a cru que l'utilisateur avait tapé "Entrée" au lieu de Z, Q, S ou D. La solution : Le petit espace magique " %c".En mettant un espace juste avant le %c dans ton scanf, tu donnes une instruction très précise au langage C : "S'il te plaît, ignore tous les caractères 'blancs' (espaces, tabulations, et surtout les retours à la ligne \n) jusqu'à ce que tu trouves une vraie lettre ou un vrai chiffre." Voici ce qui se passe avec l'espace : Le \n du tour précédent est toujours là. Le scanf(" %c") arrive. Il voit le \n, il se dit : "C'est un caractère blanc, l'espace dans mon format me dit de l'ignorer". Il le jette à la poubelle.Il attend alors que l'utilisateur tape une nouvelle lettre).
        
         if (choix == 'z' || choix == 's' || choix == 'q' || choix == 'd' ||
@@ -108,6 +108,17 @@ char recuperer_direction() {
 }
 
 
+int demander_quitter() {
+    char confirmation;
+    printf("\nEtes-vous sur de vouloir quitter la partie ? (O/N) : ");
+    scanf(" %c", &confirmation);
+    if (confirmation == 'o' || confirmation == 'O') {
+        printf("Merci d'avoir joue ! A bientot.\n");
+        return 1; // Il veut quitter
+    }
+    return 0; // Il reste
+}
+
 
 //4. La Boucle de Jeu (Game Loop). C'est ici que tu orchestres tout. Voici la logique simplifiée pour gérer le tour d'un joueur.
 
@@ -116,7 +127,11 @@ void gerer_tour(Joueur *j, Case plateau[TAILLE][TAILLE]) {
    
     while (!tour_fini) {
         afficher_plateau(plateau, j);
-       
+
+        char dir = recuperer_direction();
+        if (dir == 'M' || dir == 'm') {
+            return 2; // On renvoie le code "Demande de quitter" au main
+        }
         // 1. Choisir l'arme (Fonction d'Aida)
         int arme = choisir_arme();
        
