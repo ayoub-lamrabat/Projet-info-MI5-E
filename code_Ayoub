@@ -1,417 +1,202 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <errno.h>
 
-
- 
-
-#define MAX_JOUEURS 100      /* Nombre maximum de joueurs stockés */
-#define MAX_NOM 50           /* Longueur maximale d'un nom de joueur */
-#define TAILLE_GRILLE 5      /* Taille du plateau de jeu (5x5) */
-
-
+#define MAX_JOUEURS 100
+#define MAX_NOM 50
+#define TAILLE_GRILLE 5
 
 typedef struct {
-    char nom[MAX_NOM];       /* Nom du joueur */
-    int parties;             /* Nombre total de parties jouées */
-    int victoires;           /* Nombre de fois où le joueur a gagné */
-    int cases_parcourues;    /* Nombre total de cases parcourues */
+    char nom[MAX_NOM];
+    int parties;
+    int victoires;
+    int cases_parcourues;
 } Joueur;
 
-/*
-   FONCTION : vider_buffer()
-   
-   Objectif : nettoyer le clavier après une entrée incorrecte
-   
-*/
-void vider_buffer(void) {
+void vider_buffer() {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF){
-
-    }
+    while ((c = getchar()) != '\n' && c != EOF);
 }
 
-/* 
-   FONCTION : lire_entier()
-   
-   Objectif : demander à l'utilisateur d'entrer un nombre entre min et max
-   
-   Paramètres :
-   - message[] : le texte à afficher avant de lire le nombre
-   - min : la valeur minimale acceptée
-   - max : la valeur maximale acceptée
-   
-   Retour : le nombre saisi par l'utilisateur
-*/
 int lire_entier(char message[], int min, int max) {
     int valeur;
-    int lecture_correcte;
-    int nombre_valide;
 
-    nombre_valide = 0;
-    valeur = min;
-
-    while (nombre_valide == 0) {
+    while (1) {
         printf("%s", message);
-        lecture_correcte = scanf("%d", &valeur);
 
-        if (lecture_correcte != 1) {
-            printf("Erreur : il faut entrer un nombre.\n");
+        if (scanf("%d", &valeur) == 1) {
             vider_buffer();
+
+            if (valeur >= min && valeur <= max)
+                return valeur;
         } else {
             vider_buffer();
-            if (valeur < min || valeur > max) {
-                printf("Erreur : le nombre doit etre entre %d et %d.\n", min, max);
-            } else {
-                nombre_valide = 1;
-            }
         }
+
+        printf("Valeur invalide.\n");
     }
-    return valeur;
 }
 
-/* 
-   FONCTION : lire_nom()
-   
-   Objectif : lire et valider le nom d'un joueur depuis stdin
-   
-   Paramètres :
-   - nom[] : tableau où stocker le nom
-   - message[] : message à afficher
-   
-   Retour : aucun
-*/
 void lire_nom(char nom[], char message[]) {
-    int valide = 0;
-    while (valide == 0) {
+    while (1) {
         printf("%s", message);
-        
-        /* fgets lit depuis stdin jusqu'à \n ou nombre max de caractères */
-        if (fgets(nom, MAX_NOM, stdin) == NULL) { /*lire ce que l'utilisateur tape au clavier.*/
-            printf("Erreur de saisie.\n");
-            continue;
-        }
-        
-        /* Remplacer le \n par \0 */
-        if (nom[strlen(nom) - 1] == '\n') {
-            nom[strlen(nom) - 1] = '\0';
-        }
-        
-        /* Vérifier que le nom n'est pas vide */
-        if (strlen(nom) > 0) {
-            valide = 1;
-        } else {
-            printf("Erreur : le nom ne peut pas etre vide.\n");
-        }
+
+        fgets(nom, MAX_NOM, stdin);
+
+        nom[strcspn(nom, "\n")] = '\0';
+
+        if (strlen(nom) > 0)
+            return;
+
+        printf("Nom invalide.\n");
     }
 }
 
-/* 
-   FONCTION : extraire_nom()
-   
-   Objectif : extraire le nom d'une ligne du fichier (format "Nom: Alice")
-   
-   Paramètres :
-   - ligne[] : la ligne complète du fichier (lue avec fgets)
-   - nom[] : tableau où stocker le nom
-*/
-void extraire_nom(char ligne[], char nom[]) {
-    int i = 5, j = 0;
-    
-    /* Sauter les 5 premiers caractères ("Nom: ") */
-    while (ligne[i] != '\0' && ligne[i] != '\n') {
-        nom[j++] = ligne[i++];
-    }
-    nom[j] = '\0';
-}
-
-/* 
-   FONCTION : extraire_nombre()
-   
-   Objectif : extraire un nombre d'une ligne du fichier (format "Parties: 5")
-   
-   Paramètres :
-   - ligne[] : la ligne complète du fichier (lue avec fgets)
-   
-   Retour : le nombre trouvé (converti avec atoi)
-*/
-int extraire_nombre(char ligne[]) {
-    char texte_nombre[20];
-    int i = 0, j = 0;
-
-    /* Trouver le caractère ':' */
-    while (ligne[i] != ':' && ligne[i] != '\0'){
-    i++;}
-    
-    /* Sauter le ':' et l'espace */
-    if (ligne[i] == ':') i++;
-    if (ligne[i] == ' ') i++;
-
-    /* Copier les chiffres */
-    while (ligne[i] != '\0' && ligne[i] != '\n') {
-        texte_nombre[j++] = ligne[i++];
-    }
-    texte_nombre[j] = '\0';
-
-    return atoi(texte_nombre);
-}
-
-/*
-   FONCTION : chercher_joueur()
-   
-   Objectif : trouver la position d'un joueur dans le tableau
-   
-   Paramètres :
-   - joueurs[] : tableau de tous les joueurs
-   - nb_joueurs : nombre de joueurs
-   - nom[] : nom du joueur à chercher
-   
-   Retour : position du joueur ou -1 s'il n'existe pas
-*/
 int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
     for (int i = 0; i < nb_joueurs; i++) {
-        if (strcmp(joueurs[i].nom, nom) == 0) {/*Cette fonction permet de comparer deux chaînes de caractères et de savoir si la première est inférieure, égale ou supérieure à la seconde*/
+        if (strcmp(joueurs[i].nom, nom) == 0)
             return i;
-        }
     }
+
     return -1;
 }
 
-/* 
-   FONCTION : ajouter_joueur()
-   
-   Objectif : ajouter un nouveau joueur s'il n'existe pas déjà
-   
-   Paramètres :
-   - joueurs[] : tableau des joueurs
-   - nb_joueurs : pointeur vers le nombre de joueurs
-   - nom[] : nom du nouveau joueur
-   
-   Retour : position du joueur (existant ou créé)
-*/
 int ajouter_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+
     int pos = chercher_joueur(joueurs, *nb_joueurs, nom);
 
-    if (pos == -1) {
-        if (*nb_joueurs < MAX_JOUEURS) {
-            pos = *nb_joueurs;
-            strncpy(joueurs[pos].nom, nom, MAX_NOM - 1);
-            joueurs[pos].nom[MAX_NOM - 1] = '\0';
-            joueurs[pos].parties = 0;
-            joueurs[pos].victoires = 0;
-            joueurs[pos].cases_parcourues = 0;
-            (*nb_joueurs)++;
-        } else {
-            printf("Erreur : historique plein.\n");
-        }
+    if (pos != -1)
+        return pos;
+
+    if (*nb_joueurs >= MAX_JOUEURS) {
+        printf("Historique plein.\n");
+        return -1;
     }
+
+    pos = (*nb_joueurs)++;
+
+    strcpy(joueurs[pos].nom, nom);
+    joueurs[pos].parties = 0;
+    joueurs[pos].victoires = 0;
+    joueurs[pos].cases_parcourues = 0;
+
     return pos;
-
-/* 
-   FONCTION : lire_joueur_fichier()
-   
-   Objectif : lire les données d'un joueur depuis un fichier ouvert
-   
-   Explication : lit 4 lignes (Nom, Parties, Victoires, Cases) puis la ligne "---"
-   Utilise fgets pour lire ligne par ligne depuis le flux fichier
-   
-   Paramètres :
-   - fichier : pointeur FILE sur le fichier ouvert en mode "r"
-   - joueur : pointeur vers la structure Joueur à remplir
-   
-   Retour : 1 si succès, 0 sinon (fin de fichier ou erreur)
-*/
-int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
-    char ligne[100];
-
-    /* Lecture ligne 1 : Nom */
-    if (fgets(ligne, 100, fichier) == NULL) return 0;
-    extraire_nom(ligne, joueur->nom);
-
-    /* Lecture ligne 2 : Parties */
-    if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->parties = extraire_nombre(ligne);
-
-    /* Lecture ligne 3 : Victoires */
-    if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->victoires = extraire_nombre(ligne);
-
-    /* Lecture ligne 4 : Cases parcourues */
-    if (fgets(ligne, 100, fichier) == NULL) return 0;
-    joueur->cases_parcourues = extraire_nombre(ligne);
-
-    /* Lecture ligne 5 : séparateur "---" */
-    fgets(ligne, 100, fichier);
-    return 1;
 }
 
-/* 
-   FONCTION : charger_historique()
-   
-   Objectif : charger tous les joueurs depuis le fichier de sauvegarde
-   
-   Explication : 
-   - Ouvre le fichier en mode lecture "r" avec fopen
-   - Boucle sur lire_joueur_fichier jusqu'à EOF
-   - Ferme le fichier avec fclose
-   
-   Paramètres :
-   - joueurs[] : tableau où stocker les joueurs
-   
-   Retour : nombre de joueurs chargés
-*/
 int charger_historique(Joueur joueurs[]) {
-    FILE *fichier = NULL;
-    char nom[MAX_NOM];
-    int parties,victoires,cases;
-    int nb_joueurs = 0;
 
-   
-    fichier = fopen("stats.txt", "r");
-    if (fichier == NULL) {
-        /* Fichier n'existe pas encore, ce n'est pas une erreur */
+    FILE *fichier = fopen("stats.txt", "r");
+
+    if (fichier == NULL)
         return 0;
+
+    int nb_joueurs = 0;
+    char ligne[200];
+
+    while (fgets(ligne, 200, fichier) && nb_joueurs < MAX_JOUEURS) {
+
+        ligne[strcspn(ligne, "\n")] = '\0';
+
+        if (strncmp(ligne, "Nom:", 4) == 0)
+            strcpy(joueurs[nb_joueurs].nom, ligne + 5);
+
+        else if (strncmp(ligne, "Parties:", 8) == 0)
+            joueurs[nb_joueurs].parties = atoi(ligne + 9);
+
+        else if (strncmp(ligne, "Victoires:", 10) == 0)
+            joueurs[nb_joueurs].victoires = atoi(ligne + 11);
+
+        else if (strncmp(ligne, "Cases:", 6) == 0) {
+            joueurs[nb_joueurs].cases_parcourues = atoi(ligne + 7);
+            nb_joueurs++;
+        }
     }
 
-    /* Lire chaque joueur jusqu'à EOF ou MAX_JOUEURS */
-    while (nb_joueurs < MAX_JOUEURS && lire_joueur_fichier(fichier, &joueurs[nb_joueurs])) {
-        nb_joueurs++;
-    }
-
-    /* Fermer le fichier pour libérer le buffer */
     fclose(fichier);
+
     return nb_joueurs;
 }
 
-/* 
-   FONCTION : sauvegarder_historique()
-   
-   Objectif : sauvegarder tous les joueurs dans le fichier
-   
-   Explication :
-   - Ouvre le fichier en mode écriture "w" avec fopen (crée ou écrase)
-   - Écrit chaque joueur avec fprintf (formaté pour fichier ASCII)
-   - Ferme le fichier avec fclose
-   
-   Paramètres :
-   - joueurs[] : tableau des joueurs à sauvegarder
-   - nb_joueurs : nombre de joueurs
-   
-   Retour : aucun
-*/
 void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
-    FILE *fichier = NULL;
 
-    /* Ouverture en mode écriture (crée ou écrase le fichier) */
-    fichier = fopen("stats.txt", "w");
+    FILE *fichier = fopen("stats.txt", "w");
+
     if (fichier == NULL) {
-        printf("Erreur : impossible d'ouvrir le fichier de sauvegarde.\n");
-        printf("Code d'erreur = %d\n", errno);
-        printf("Message d'erreur = %s\n", strerror(errno));
-       
+        printf("Erreur sauvegarde.\n");
+        return;
     }
 
-    /* Écriture formatée de chaque joueur */
     for (int i = 0; i < nb_joueurs; i++) {
+
         fprintf(fichier, "Nom: %s\n", joueurs[i].nom);
         fprintf(fichier, "Parties: %d\n", joueurs[i].parties);
-        fprintf(fichier, "Victoires: %d\n", joueurs[Cette fonction permet de comparer deux chaînes de caractères et de savoir si la première est inférieure, égale ou supérieure à la secondei].victoires);
+        fprintf(fichier, "Victoires: %d\n", joueurs[i].victoires);
         fprintf(fichier, "Cases: %d\n", joueurs[i].cases_parcourues);
         fprintf(fichier, "---\n");
     }
 
-    /* Fermer le fichier pour libérer le buffer */
     fclose(fichier);
 }
 
-/* 
-   FONCTION : maj_historique()
-   
-   Objectif : mettre à jour les statistiques après une partie
-   
-   Paramètres :
-   - historique[] : tableau des joueurs
-   - nb_historique : pointeur vers le nombre de joueurs
-   - noms_partie[] : noms des joueurs de la partie
-   - nb_joueurs_partie : nombre de joueurs
-   - gagnant[] : nom du gagnant
-   - cases_partie[] : cases parcourues par chaque joueur
-   
-   Retour : aucun
-*/
-void maj_historique(Joueur historique[],
-                    int *nb_historique,
-                    char noms_partie[][MAX_NOM],
-                    int nb_joueurs_partie,
-                    char gagnant[],
-                    int cases_partie[]) {
+void maj_historique(
+    Joueur historique[],
+    int *nb_historique,
+    char noms_partie[][MAX_NOM],
+    int nb_joueurs_partie,
+    char gagnant[],
+    int cases_partie[]
+) {
+
     for (int i = 0; i < nb_joueurs_partie; i++) {
-        int position = ajouter_joueur(historique, nb_historique, noms_partie[i]);
 
-        if (position != -1) {
-            historique[position].parties++;
-            historique[position].cases_parcourues += cases_partie[i];
-            if (strcmp(noms_partie[i], gagnant) == 0) {
-                historique[position].victoires++;
-            }
-        }
+        int pos = ajouter_joueur(
+            historique,
+            nb_historique,
+            noms_partie[i]
+        );
+
+        if (pos == -1)
+            continue;
+
+        historique[pos].parties++;
+        historique[pos].cases_parcourues += cases_partie[i];
+
+        if (strcmp(noms_partie[i], gagnant) == 0)
+            historique[pos].victoires++;
     }
 }
 
-/* 
-   FONCTION : joueur_superieur()
-   
-   Objectif : comparer deux joueurs selon le critère de classement
-   
-   Critères :
-   1. Plus de victoires
-   2. Si égal, moins de parties
-   3. Si égal, plus de cases
-   
-   Paramètres :
-   - a : premier joueur
-   - b : deuxième joueur
-   
-   Retour : 1 si a > b, 0 sinon
-*/
 int joueur_superieur(Joueur a, Joueur b) {
-    int resultat = 0;
 
-    if (a.victoires > b.victoires) {
-        resultat = 1;
-    } else if (a.victoires == b.victoires && a.parties < b.parties) {
-        resultat = 1;
-    } else if (a.victoires == b.victoires &&
-               a.parties == b.parties &&
-               a.cases_parcourues > b.cases_parcourues) {
-        resultat = 1;
-    }
+    if (a.victoires > b.victoires)
+        return 1;
 
-    return resultat;
+    if (a.victoires == b.victoires &&
+        a.parties < b.parties)
+        return 1;
+
+    if (a.victoires == b.victoires &&
+        a.parties == b.parties &&
+        a.cases_parcourues > b.cases_parcourues)
+        return 1;
+
+    return 0;
 }
 
-/* 
-   FONCTION : trier_classement()
-   
-   Objectif : trier les joueurs par classement (meilleur au moins bon)
-   
-   Paramètres :
-   - joueurs[] : tableau à trier
-   - nb_joueurs : nombre de joueurs
-   
-   Retour : aucun
-*/
 void trier_classement(Joueur joueurs[], int nb_joueurs) {
+
     for (int i = 0; i < nb_joueurs - 1; i++) {
+
         int meilleur = i;
+
         for (int j = i + 1; j < nb_joueurs; j++) {
-            if (joueur_superieur(joueurs[j], joueurs[meilleur])) {
+
+            if (joueur_superieur(joueurs[j], joueurs[meilleur]))
                 meilleur = j;
-            }
         }
+
         if (meilleur != i) {
+
             Joueur temp = joueurs[i];
             joueurs[i] = joueurs[meilleur];
             joueurs[meilleur] = temp;
@@ -419,107 +204,49 @@ void trier_classement(Joueur joueurs[], int nb_joueurs) {
     }
 }
 
-/* 
-   FONCTION : afficher_classement()
-   
-   Objectif : afficher le classement des joueurs
-   
-   Paramètres :
-   - historique[] : tableau des joueurs
-   - nb_historique : nombre de joueurs
-   
-   Retour : aucun
-*/
 void afficher_classement(Joueur historique[], int nb_historique) {
+
     if (nb_historique == 0) {
-        printf("\nAucun joueur dans l'historique.\n");
+        printf("Aucun joueur.\n");
         return;
     }
 
     trier_classement(historique, nb_historique);
-    printf("\nCLASSEMENT GENERAL\n");
-    printf("------------------\n");
+
+    printf("\nCLASSEMENT\n\n");
 
     for (int i = 0; i < nb_historique; i++) {
+
         printf("%d. %s\n", i + 1, historique[i].nom);
-        printf("   Victoires : %d\n", historique[i].victoires);
-        printf("   Parties : %d\n", historique[i].parties);
-        printf("   Cases parcourues : %d\n", historique[i].cases_parcourues);
-        printf("\n");
+        printf("Victoires : %d\n", historique[i].victoires);
+        printf("Parties : %d\n", historique[i].parties);
+        printf("Cases : %d\n\n", historique[i].cases_parcourues);
     }
 }
 
-/* 
-   FONCTION : afficher_resume_partie()
-   
-   Objectif : afficher le résumé de la partie
-   
-   Paramètres :
-   - noms_partie[] : noms des joueurs
-   - nb_joueurs_partie : nombre de joueurs
-   - gagnant[] : nom du gagnant
-   - cases_partie[] : cases parcourues
-   
-   Retour : aucun
-*/
-void afficher_resume_partie(char noms_partie[][MAX_NOM],
-                            int nb_joueurs_partie,
-                            char gagnant[],
-                            int cases_partie[]) {
-    printf("\n===========================\n");
-    printf("      RESUME DE PARTIE\n");
-    printf("===========================\n");
-    printf("Gagnant : %s\n\n", gagnant);
-    printf("Joueurs de la partie :\n");
+void afficher_plateau(char plateau[TAILLE_GRILLE][TAILLE_GRILLE]) {
 
-    for (int i = 0; i < nb_joueurs_partie; i++) {
-        printf("- %s : %d cases parcourues\n", noms_partie[i], cases_partie[i]);
-    }
-    printf("===========================\n");
-}
-
-/* 
-   FONCTION : afficher_plateau_complet()
-   
-   Objectif : afficher le plateau complètement révélé
-   
-   Paramètres :
-   - plateau[TAILLE_GRILLE][TAILLE_GRILLE] : la grille
-   
-   Retour : aucun
-*/
-void afficher_plateau_complet(char plateau[TAILLE_GRILLE][TAILLE_GRILLE]) {
-    printf("\n===========================\n");
-    printf("   PLATEAU COMPLET DEVOILE\n");
-    printf("===========================\n\n");
+    printf("\nPLATEAU\n\n");
 
     for (int i = 0; i < TAILLE_GRILLE; i++) {
+
         for (int j = 0; j < TAILLE_GRILLE; j++) {
             printf(" %c ", plateau[i][j]);
         }
+
         printf("\n");
     }
 }
 
-/* 
-   FONCTION : afficher_fin_partie()
-   
-   Objectif : afficher l'écran de fin de partie
-   
-   Paramètres :
-   - gagnant[] : nom du gagnant
-   - duree_secondes : durée en secondes
-   
-   Retour : aucun
-*/
-void afficher_fin_partie(char gagnant[], int duree_secondes) {
-    int minutes = duree_secondes / 60;
-    int secondes = duree_secondes % 60;
+int main() {
 
-    printf("\n===========================\n");
-    printf("       FIN DE PARTIE\n");
-    printf("===========================\n");
-    printf("Vainqueur : %s\n", gagnant);
-    printf("Duree     : %02d min %02d sec\n", minutes, secondes);
-    printf("===========================\n");
+    Joueur historique[MAX_JOUEURS];
+
+    int nb = charger_historique(historique);
+
+    printf("%d joueur(s) charges\n", nb);
+
+    afficher_classement(historique, nb);
+
+    return 0;
 }
