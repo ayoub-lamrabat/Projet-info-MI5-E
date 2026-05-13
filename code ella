@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+
 
 
 
@@ -247,4 +244,98 @@ void gerer_tour(Joueur *j, Case plateau[TAILLE][TAILLE]) {
     }
 }
     }
+}
+if (j->a_trouve_coffre && j->a_trouve_arme){
+return 1; 
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+
+int main() {
+    int nb_joueurs;
+    Joueur liste_joueurs[4];
+    Case plateau[TAILLE][TAILLE];
+
+    printf("=== BIENVENUE DANS LE MEMO-RPG ===\n");
+
+    // 1. Configuration du nombre de joueurs
+    do {
+        printf("Combien de joueurs (2 a 4) ? ");
+        scanf("%d", &nb_joueurs);
+    } while (nb_joueurs < 2 || nb_joueurs > 4);
+
+    // 2. Initialisation des joueurs
+    for (int i = 0; i < nb_joueurs; i++) {
+        printf("\n--- Configuration Joueur %d ---\n", i + 1);
+        printf("Nom : ");
+        scanf("%s", liste_joueurs[i].nom);
+        
+        printf("Choisissez votre classe :\n");
+        printf("0: Guerrier (Epee), 1: Ranger (Baton), 2: Magicien (Grimoire), 3: Voleur (Dague)\n");
+        printf("Votre choix : ");
+        scanf("%d", &liste_joueurs[i].classe);
+
+        liste_joueurs[i].a_trouve_coffre = 0;
+        liste_joueurs[i].a_trouve_arme = 0;
+    }
+
+    // 3. Initialisation du plateau et des positions
+    // Ici, on appellerait la fonction de remplissage d'Aida 
+    remplir_plateau(plateau); !!!!!!!!!!!!!!!!!!!!!!!A REVOIR!!!!!!!!!!!!!!!!!!!!!
+
+    init_positions_depart(liste_joueurs, nb_joueurs);
+
+    // 4. Boucle Principale du Jeu
+    int jeu_en_cours = 1;
+    while (jeu_en_cours) {
+        for (int i = 0; i < nb_joueurs; i++) {
+            printf("\nC'est au tour de %s !\n", liste_joueurs[i].nom);
+            
+            int statut = gerer_tour(&liste_joueurs[i], plateau);
+
+            if (statut == 2) { // Code pour "Quitter le jeu"
+                if (demander_quitter()) {
+                    jeu_en_cours = 0;
+                    break; // Sort de la boucle des joueurs
+                }
+            }
+            
+            if (statut == 1) { // Code pour "Victoire"
+             printf("\n******************************************\n");
+             printf("         BRAVO, LA QUETE EST FINIE !        \n");
+             printf("    LE VAINQUEUR EST : %s                   \n", liste_joueurs[i].nom);
+             printf("******************************************\n");
+                jeu_en_cours = 0;
+                break;
+            }
+        }
+    }
+
+    return 0;
 }
