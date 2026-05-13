@@ -192,7 +192,7 @@ int ajouter_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
     int position = chercher_joueur(joueurs, *nb_joueurs, nom);
 
     if (position == -1 && *nb_joueurs < MAX_JOUEURS) {
-        strncpy(joueurs[*nb_joueurs].nom, nom, MAX_NOM - 1);/*Cette fonction permet de copier le contenu d'une chaîne de caractère dans une autre, dans la limite du prenom . /*
+        strncpy(joueurs[*nb_joueurs].nom, nom, MAX_NOM - 1);/*Cette fonction permet de copier le contenu d'une chaîne de caractère dans une autre, dans la limite du prenom .*/
         joueurs[*nb_joueurs].nom[MAX_NOM - 1] = '\0';
         joueurs[*nb_joueurs].parties = 0;
         joueurs[*nb_joueurs].victoires = 0;
@@ -345,7 +345,7 @@ void maj_historique(Joueur historique[],
                     char gagnant[],
                     int cases_partie[]) {
     for (int i = 0; i < nb_joueurs_partie; i++) {
-        int position = ajoute_joueur(historique, nb_historique, noms_partie[i]);
+        int position = ajouter_joueur(historique, nb_historique, noms_partie[i]);
 
         if (position != -1) {
             historique[position].parties++;
