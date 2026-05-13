@@ -524,30 +524,3 @@ void afficher_fin_partie(char gagnant[], int duree_secondes) {
     printf("Duree     : %02d min %02d sec\n", minutes, secondes);
     printf("===========================\n");
 }
-
-/* 
-   FONCTION : obtenir_temps()
-   
-   Objectif : récupérer le timestamp actuel
-   
-   Paramètres : aucun
-   Retour : timestamp en secondes (time_t)
-*/
-time_t obtenir_temps(void) {
-    return time(NULL);
-}
-
-/* 
-   FONCTION : calculer_duree()
-   
-   Objectif : calculer la durée entre deux timestamps
-   
-   Paramètres :
-   - debut : timestamp de début
-   - fin : timestamp de fin
-   
-   Retour : durée en secondes (int)
-*/
-int calculer_duree(time_t debut, time_t fin) {
-    return (int)difftime(fin, debut);
-}
