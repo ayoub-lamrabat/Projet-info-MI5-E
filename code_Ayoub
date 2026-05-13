@@ -3,18 +3,16 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <fichier.h>
+
  
-/*  
-   CONSTANTES : définissent les valeurs fixes utilisées dans le programme
- */
+
 #define MAX_JOUEURS 100      /* Nombre maximum de joueurs stockés */
 #define MAX_NOM 50           /* Longueur maximale d'un nom de joueur */
 #define TAILLE_GRILLE 5      /* Taille du plateau de jeu (5x5) */
-#define FICHIER_STATS "stats.txt"  /* Nom du fichier pour sauvegarder les stats */
 
-/* 
-   STRUCTURE DE DONNEES : représente un joueur avec ses statistiques
- */
+
+
 typedef struct {
     char nom[MAX_NOM];       /* Nom du joueur */
     int parties;             /* Nombre total de parties jouées */
@@ -22,13 +20,11 @@ typedef struct {
     int cases_parcourues;    /* Nombre total de cases parcourues */
 } Joueur;
 
-/* 
+/*
    FONCTION : vider_buffer()
    
    Objectif : nettoyer le clavier après une entrée incorrecte
    
-   Paramètres : aucun
-   Retour : aucun 
 */
 void vider_buffer(void) {
     int c;
@@ -118,8 +114,6 @@ void lire_nom(char nom[], char message[]) {
    Paramètres :
    - ligne[] : la ligne complète du fichier (lue avec fgets)
    - nom[] : tableau où stocker le nom
-   
-   Retour : aucun
 */
 void extraire_nom(char ligne[], char nom[]) {
     int i = 5, j = 0;
@@ -269,7 +263,7 @@ int charger_historique(Joueur joueurs[]) {
     FILE *fichier = NULL;
     int nb_joueurs = 0;
 
-    /* Ouverture en mode lecture */
+   
     fichier = fopen(FICHIER_STATS, "r");
     if (fichier == NULL) {
         /* Fichier n'existe pas encore, ce n'est pas une erreur */
