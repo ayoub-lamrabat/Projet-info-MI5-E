@@ -302,12 +302,12 @@ void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
     FILE *fichier = NULL;
 
     /* Ouverture en mode écriture (crée ou écrase le fichier) */
-    fichier = fopen("stat.txt", "w");
+    fichier = fopen("stats.txt", "w");
     if (fichier == NULL) {
         printf("Erreur : impossible d'ouvrir le fichier de sauvegarde.\n");
         printf("Code d'erreur = %d\n", errno);
         printf("Message d'erreur = %s\n", strerror(errno));
-        return 1;
+       
     }
 
     /* Écriture formatée de chaque joueur */
@@ -345,7 +345,7 @@ void maj_historique(Joueur historique[],
                     char gagnant[],
                     int cases_partie[]) {
     for (int i = 0; i < nb_joueurs_partie; i++) {
-        int position = add_joueur(historique, nb_historique, noms_partie[i]);
+        int position = ajoute_joueur(historique, nb_historique, noms_partie[i]);
 
         if (position != -1) {
             historique[position].parties++;
