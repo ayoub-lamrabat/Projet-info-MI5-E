@@ -4,11 +4,11 @@ void remplir_cartes(char carte[25]){ // fonction pour décider quels personnages
     int i;
 
     for(i = 0; i < 4; i++) { // on remplit les cases de 0 à 3
-        carte[i]= 'B'; // 'B' correspond au monstre Basilic
+        carte[i]= 'B'; // 'B' correspond au monstre Basilic (il y en a 4)
     }
 
     for(i = 4; i < 8; i++){ // remplissage des 4 cases suivantes
-        carte[i]= 'T'; // Trolls
+        carte[i]= 'T'; // Correspond aux Trolls
     }
 
     for(i = 8; i < 12; i++) { // remplissage des 4 cases suivantes
@@ -16,41 +16,41 @@ void remplir_cartes(char carte[25]){ // fonction pour décider quels personnages
     }
 
     for (i = 12; i < 16; i++){ // on remplit les 4 cases suivantes
-        carte[i]='H'; // harpies
+        carte[i]='H'; // Correspond aux harpies
     }
 
-    for(i = 16; i < 18; i++) { // coffres
+    for(i = 16; i < 18; i++) { // les 2 cases suivantes pour les coffres
         carte[i]= 'C';
     }
 
-    carte[18]='E'; // épée de feu 
+    carte[18]='E'; // épée de feu (lettre B deja prise)
     carte[19]= 'F'; // baton familier
     carte[20]= 'D'; // dague du sommeil
     carte[21] = 'G'; // grimoire interdit
     carte[22]= 'P'; // portail magique
-    carte[23]= 'M'; // totem
-    carte[24]= 'M'; // totem
+    carte[23]= 'M'; // totem de transmutation 
+    carte[24]= 'M'; // totem de transmutation
 }
 
-void melanger_carte(char carte[], int n){ // mélange des cartes
+void melanger_carte(char carte[], int n){ // mélange des cartes, on utilise void car c'est une action sans réponse
 
-    for(int i = n - 1; i > 0; i--) {
+    for(int i = n - 1; i > 0; i--) { // on parcourt le tableau qu'on a créer depuis la fin
 
-        int j = rand() % (i + 1); // tirage aléatoire
+        int j = rand() % (i + 1); // tirage aléatoire, mélange efficacement les cartes
 
         char temp = carte[i];
         carte[i] = carte[j];
-        carte[j] = temp; // échange des cartes
+        carte[j] = temp; // échange des cartes sans détruire les données (chapitre tri)
     }
 }
 
 void remplir_plateau(char carte[25], char plateau[5][5]) { // remplir plateau 5x5
-    int a = 0;
+    int a = 0; // va nous permettre de parcourir toutes les cartes 
 
-    for (int i = 0; i < 5; i++){
-        for (int j = 0; j < 5; j++){
+    for (int i = 0; i < 5; i++){ // on parcourt les 5 cartes verticalement 
+        for (int j = 0; j < 5; j++){ // on parcourt les 5 cartes horizontalement 
 
-            plateau[i][j] = carte[a];
+            plateau[i][j] = carte[a]; // piocher une carte dans le tableau créer et la placer sur le plateau 
             a++; // carte suivante
         }
     }
@@ -60,13 +60,13 @@ void remplir_plateau(char carte[25], char plateau[5][5]) { // remplir plateau 5x
 #define MIROIR 3
 #define TORCHE 4
 #define HACHE 5
-#define ARC 6
+#define ARC 6 // on définit les monstres avec des nombres 
 
 #define VICTOIRE 1
 #define DEFAITE 0
 #define RIEN 2
 
-int choisir_arme() { // choix de l'utilisateur
+int choisir_arme() { // choix de l'arme par l'utilisateur
     int choix;
 
     do {
@@ -74,7 +74,7 @@ int choisir_arme() { // choix de l'utilisateur
 
         if(scanf("%d", &choix) != 1) {
             while(getchar() != '\n');
-            choix = 0;
+            choix = 0; // verification du scanf
         }
 
         if(choix < 3 || choix > 6){
