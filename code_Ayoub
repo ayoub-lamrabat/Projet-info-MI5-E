@@ -183,7 +183,7 @@ int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
 }
 
 /* 
-   FONCTION : add_joueur()
+   FONCTION : ajouter_joueur()
    
    Objectif : ajouter un nouveau joueur s'il n'existe pas déjà
    
@@ -194,11 +194,11 @@ int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
    
    Retour : position du joueur (existant ou créé)
 */
-int add_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+int ajouter_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
     int position = chercher_joueur(joueurs, *nb_joueurs, nom);
 
     if (position == -1 && *nb_joueurs < MAX_JOUEURS) {
-        strncpy(joueurs[*nb_joueurs].nom, nom, MAX_NOM - 1);
+        strncpy(joueurs[*nb_joueurs].nom, nom, MAX_NOM - 1);/*Cette fonction permet de copier le contenu d'une chaîne de caractère dans une autre, dans la limite du prenom . /*
         joueurs[*nb_joueurs].nom[MAX_NOM - 1] = '\0';
         joueurs[*nb_joueurs].parties = 0;
         joueurs[*nb_joueurs].victoires = 0;
