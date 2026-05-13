@@ -2,154 +2,201 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MIROIR 2
-#define TORCHE 3
-#define HACHE 4
-#define ARC 5 // Permet de savoir quel arme correspond à quel nombre.
-
-#define VICTOIRE 1
-#define DEFAITE 0 // Constante qui défini défaites et victoires.
-
-void remplir_cartes (char carte []) { // fonction pour décider quels personnages se trouvent dans le paquet de carte.
+void remplir_cartes(char carte[25]){ // fonction pour décider quels personnages se trouvent dans le paquet de carte.
     int i;
-    for(i=0; i<4; i++) { // on remplit les cases de 0 à 3
-        carte[i]= 'B'; // avec i l'emplacmeent de la carte, et carte[i] le contenu de la carte, 'B' correspond au monstre Basilics (il y en a 4) 
+
+    for(i = 0; i < 4; i++) { // on remplit les cases de 0 à 3
+        carte[i]= 'B'; // 'B' correspond au monstre Basilic
     }
-    for(i=4; i<8;i++){ // remplissage des 4 cases suivantes. 
-        carte[i]= 'T'; // meme principe que precedemment, le 'T' représente les Trolls.
+
+    for(i = 4; i < 8; i++){ // remplissage des 4 cases suivantes
+        carte[i]= 'T'; // Trolls
     }
-    for(i=8; i<12; i++) { // remplissage des 4 cases suivantes.
-        carte[i]= 'Z' ; // represente les Zombies.
+
+    for(i = 8; i < 12; i++) { // remplissage des 4 cases suivantes
+        carte[i]= 'Z' ; // Zombies
     }
-    for (i=12; i<14; i++){ // on remplis les 2 cases suivantes
-        carte[i]='H'; // pour les harpies 
+
+    for (i = 12; i < 16; i++){ // on remplit les 4 cases suivantes
+        carte[i]='H'; // harpies
     }
-    for(i=14; i<18; i++) { // Les 4 cases suivantes
-        carte [i]= 'C'; // pour les coffres forts 
+
+    for(i = 16; i < 18; i++) { // coffres
+        carte[i]= 'C';
     }
 
     carte[18]='E'; // épée de feu 
-    carte [19]= 'F'; // baton controle familier (car le B est deja pris) 
-    carte [20]= 'D'; // la dague du sommeil
-    carte [21] = 'G'; // le grimmoire interdit 
-    carte [22]= 'P'; // Le portail magique 
-    carte [23]= 'M'; // Le totem de transmutation 
-    carte [24]= 'M'; // pour le totem de transmutation on aurait aussi pu faire une mini boucle 
+    carte[19]= 'F'; // baton familier
+    carte[20]= 'D'; // dague du sommeil
+    carte[21] = 'G'; // grimoire interdit
+    carte[22]= 'P'; // portail magique
+    carte[23]= 'M'; // totem
+    carte[24]= 'M'; // totem
 }
 
-void melanger_carte(char carte[], int n) { //void car c'est une action sans réponse.
-    for(int i=n-1; i>0; i--){ // on parcourt depuis la fin le tableau de 25 qu'on a créer.
-        int j = rand() % (i+1); // va permetre de mélanger efficacement les cartes, pourquoi pas rand %25 comme d'habitude ? On pourrais piocher une carte déja placée a la fin, ça permet de ne plus toucher les cartes deja melangées 
-        int temp= carte[i]; 
-        carte[i]= carte[j];
-        carte[j]=temp; // cet échange de variable va permettre d'échanger la carte de base avec une carte choisit aléatoirement sans détruire les données (lié chap tri)
-    } // On uilise d'abord un tableau 1D parce que c'est plus simple a manipuler, (pour mélanger un tableau 2D il faut gérer des paires de coordonnées, et en voulant placer les monstres sur le plateau on risque de tomber sur la même case plusieurs fois en tirant aléatoirement. (le programme devient loud car il faudra gérer ces tirages. )
-}
+void melanger_carte(char carte[], int n){ // mélange des cartes
 
-void remplir_plateau (char carte[25], char plateau[5][5]){ // La fonction va nous permettre de remplir le plateau, prend en paramètre le tableau de carte créer précedemment et le plateau a remplir.
-    int a=0; // va augmenter de 1 en 1, va permettre de parcourir toutes les cartes
-    for (int i=0; i<5; i++){ // Il s'agit d'un jeu 5x5, on parcourt les 5 cases verticales 
-        for (int j=0; j<5; j++){ // parcourt les cases horizontalement
-            plateau [i][j]= carte[a]; // permet de piocher une carte et la mettre sur le plateau, ça commence a 0 car on a initialisé "a" à 0.
-            a++; // je prends la carte suivante, sans ça on piocherai toujours la même carte
-        } 
+    for(int i = n - 1; i > 0; i--) {
+
+        int j = rand() % (i + 1); // tirage aléatoire
+
+        char temp = carte[i];
+        carte[i] = carte[j];
+        carte[j] = temp; // échange des cartes
     }
 }
 
-int choisir_arme() { // fonction qui permet a l'uilisateur de choisir son arme
-    int choix; 
-    do {
-        printf("Choisissez votre arme :\n");
-        scanf("%d", &choix); 
-        if(choix < 2 || choix > 5){ // Si le choix de l'utilisateur sort de l'intervalle attribuée aux armes. 
-            printf("Nombre invalide ! Saisir un nombre entre 2 et 5.\n");
+void remplir_plateau(char carte[25], char plateau[5][5]) { // remplir plateau 5x5
+    int a = 0;
+
+    for (int i = 0; i < 5; i++){
+        for (int j = 0; j < 5; j++){
+
+            plateau[i][j] = carte[a];
+            a++; // carte suivante
         }
-    } while (choix < 2 || choix > 5); 
-    return choix; 
+    }
 }
 
 
-int resoudre_combat(int arme, char monstre) { // Fonction permettant de coder la logique Arme Versus Monstre.
+#define MIROIR 3
+#define TORCHE 4
+#define HACHE 5
+#define ARC 6
+
+#define VICTOIRE 1
+#define DEFAITE 0
+#define RIEN 2
+
+int choisir_arme() { // choix de l'utilisateur
+    int choix;
+
+    do {
+        printf("Choisissez votre arme (3 à 6) : ");
+
+        if(scanf("%d", &choix) != 1) {
+            while(getchar() != '\n');
+            choix = 0;
+        }
+
+        if(choix < 3 || choix > 6){
+            printf("Nombre invalide !\n");
+        }
+
+    } while (choix < 3 || choix > 6);
+
+    return choix;
+}
+
+
+int resoudre_combat(int arme, char monstre) { // logique combat
+
     if(monstre == 'B') {
-        if(arme == MIROIR) { // on utilise directement le nom des armes grâce au "#define" 
-            printf("Le Basilic se pétrifie, Victoire\n");
+        if(arme == MIROIR) {
+            printf("Victoire contre le Basilic\n");
             return VICTOIRE;
         } else {
-            printf(" Les yeux du basilic vous transforme en pierre, Defaite\n");
-            return DEFAITE;
-        }
-    } else if(monstre == 'Z') {
-        if (arme == TORCHE) {
-            printf("Le zombie ne supporte pas, le feu en vient à bout. Victoire.\n");
-            return VICTOIRE; 
-        } else { 
-            printf("Le zombie vous a attrapé, il est insensible à votre arme. Defaite\n"); 
-            return DEFAITE;
-        }
-    } else if (monstre == 'T'){
-        if (arme == HACHE) {
-            printf("vous l'emportez face au troll\n");
-            return VICTOIRE;
-        } else {
-            printf("le Troll vous tue\n"); 
-            return DEFAITE;
-        }
-    } else if(monstre == 'H'){
-        if (arme == ARC) {
-            printf("Vous tuez la harpie.\n");
-            return VICTOIRE; 
-        } else {
-            printf("La harpie vous tue.\n");
+            printf("Pétrifié par le Basilic\n");
             return DEFAITE;
         }
     }
-    return VICTOIRE; //si la case n'est pas un monstre 
+
+    else if(monstre == 'Z') {
+        if(arme == TORCHE) {
+            printf("Zombie vaincu\n");
+            return VICTOIRE;
+        } else {
+            printf("Dévoré par le Zombie\n");
+            return DEFAITE;
+        }
+    }
+
+    else if(monstre == 'T') {
+        if(arme == HACHE) {
+            printf("Troll vaincu\n");
+            return VICTOIRE;
+        } else {
+            printf("Troll vous tue\n");
+            return DEFAITE;
+        }
+    }
+
+    else if(monstre == 'H') {
+        if(arme == ARC) {
+            printf("Harpie vaincue\n");
+            return VICTOIRE;
+        } else {
+            printf("Harpie vous tue\n");
+            return DEFAITE;
+        }
+    }
+
+    return RIEN; // case vide ou objet
 }
 
-void logique_portail(int *joueur_x, int *joueur_y){ // x represente la ligne, y la colonne.la fonction recoit l'adresse des coordonées d'un joueur pour le changer de place, pas seulement sa copie (ino ce serai pas modifiable)
-    printf("Portail Magique ! Choisissez vos nouvelles coordonnes :\n"); 
+
+void logique_portail(int *joueur_x, int *joueur_y) {
+
+    printf("Portail Magique !\n");
+
     do {
-        printf("Nouvelle ligne :"); 
-        scanf("%d", joueur_x); 
-        printf("Nouvelle colonne :\n"); 
-        scanf("%d", joueur_y); 
-    } while(*joueur_x < 0 || *joueur_x > 4 || *joueur_y < 0 || *joueur_y > 4); // on ne sort pas de la matrice 5x5 
+        printf("Nouvelle ligne : ");
+        scanf("%d", joueur_x); //  pas de & car joueur_x est déjà une adresse
 
-    printf("Teleportation reussie en [%d][%d] \n", *joueur_x, *joueur_y); 
+        printf("Nouvelle colonne : ");
+        scanf("%d", joueur_y); // pas de & car joueur_y est déjà une adresse
+
+    } while(*joueur_x < 0 || *joueur_x > 4 || *joueur_y < 0 || *joueur_y > 4);
+
+    printf("Téléportation en [%d][%d]\n", *joueur_x, *joueur_y);
 }
 
-void logique_totem(char plateau[5][5], int *actuelle_x, int *actuelle_y, int depart_x, int depart_y) {
-    int cible_x, cible_y; // les cases avec lesquelles ont souhaite echanger le totem
 
-    printf(" Il s'agit d'un totem de transmutation, veuillez échanger cette case avec une autre :\n"); 
-    printf("La ligne de la case à échanger est :\n"); 
-    scanf("%d", &cible_x); 
-    printf("Colonne de la case a echanger est :\n"); 
-    scanf("%d", &cible_y);
-    
-    char temp = plateau[*actuelle_x][*actuelle_y];
-    plateau [*actuelle_x][*actuelle_y] = plateau[cible_x][cible_y];
-    plateau[cible_x][cible_y] = temp; // on utilise la méthode du swap pour intervertir les cases (très souvent utilisée dans les algo de tri)
-    
-    *actuelle_x = depart_x;
-    *actuelle_y = depart_y; // position de depart definie au debut de la partie ne bouge pas tandis que actuelle bouge au fil de la partie 
-    printf("Les cases ont ete echangées, retour à la case depart : [%d][%d]\n", *actuelle_x, *actuelle_y); //car c'est le pion actuelle qu'on déplace
+
+void logique_totem(char plateau[5][5], int *x, int *y, int depx, int depy) {
+
+    int cx, cy;
+
+    printf("Totem de transmutation\n");
+
+    printf("Ligne cible : ");
+    scanf("%d", &cx);
+
+    printf("Colonne cible : ");
+    scanf("%d", &cy);
+
+    if(cx < 0 || cx > 4 || cy < 0 || cy > 4){
+        printf("Coordonnées invalides\n");
+        return;
+    }
+
+    char temp = plateau[*x][*y];
+    plateau[*x][*y] = plateau[cx][cy];
+    plateau[cx][cy] = temp;
+
+    *x = depx;
+    *y = depy;
+
+    printf("Retour au départ [%d][%d]\n", *x, *y);
 }
 
-int verifier_victoire(int *trouver_coffre, int *trouve_arme, char case_actuelle, char arme_recherche){
+
+int verifier_victoire(int *coffre, int *arme_trouvee, char case_actuelle, char arme_recherche){
+
     if(case_actuelle == 'C'){
-        printf("Bravo ! Vous venez de trouver un coffre au tresor.\n"); 
-        *trouver_coffre = 1; // mettre a jour la variable avec un pointeur 
+        printf("Coffre trouvé\n");
+        *coffre = 1;
     }
-    
-    if(case_actuelle == arme_recherche) {
-        printf(" Bravo ! Vous venez de trouver votre arme antique :\n");
-        *trouve_arme = 1;
+
+    if(case_actuelle == arme_recherche){
+        printf("Arme trouvée\n");
+        *arme_trouvee = 1;
     }
-    
-    if(*trouver_coffre == 1 && *trouve_arme == 1 ){
-        printf ("Victoire totale ! Vous etes le vainqueur de la partie : \n"); 
-        return 1; 
+
+    if(*coffre == 1 && *arme_trouvee == 1){
+        printf("VICTOIRE TOTALE\n");
+        return 1;
     }
-    return 0; // le jeu continue 
+
+    return 0;
 }
