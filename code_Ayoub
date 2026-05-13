@@ -120,6 +120,30 @@ joueur->cases_parcourues = extraire_nombre(ligne);
 fgets(ligne, 100, fichier);
 return 1;
 }
+int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
+for (int i = 0; i < nb_joueurs; i++) {
+if (strcmp(joueurs[i].nom, nom) == 0) {/*Cette fonction permet de comparer deux chaînes de caractères et de savoir si la première est inférieure, égale ou supérieure à la seconde*/
+return i;
+}
+}
+return -1;
+}
+int ajouter_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+int pos = chercher_joueur(joueurs, *nb_joueurs, nom);
+if (pos == -1) {
+if (*nb_joueurs < MAX_JOUEURS) {
+pos = *nb_joueurs;
+strncpy(joueurs[pos].nom, nom, MAX_NOM - 1);
+joueurs[pos].nom[MAX_NOM - 1] = '\0';
+joueurs[pos].parties = 0;
+joueurs[pos].victoires = 0;
+joueurs[pos].cases_parcourues = 0;
+(*nb_joueurs)++;
+} else {
+printf("Erreur : historique plein.\n");
+}
+}
+return pos;}
 /*
 FONCTION : charger_historique()
 Objectif : charger tous les joueurs depuis le fichier de sauvegarde
