@@ -27,35 +27,35 @@ carte [24]= 'M';// pour le totem de transmutation on aurait aussi pu faire une m
 
 void melanger_carte(int carte, int n) //void car c'est une action sans réponse.
 for(int i=n-1, i>0; i--){ // on parcourt depuis la fin le tableau de 25 qu'on a créer.
-int j = rand % (i+1); // va permetre de mélanger efficacement les cartes, pourquoi pas %25 comme d'habitude ? On pourrais piocher une carte deja placée a la fin, ca permet de ne plus toucher les cartes deja melangées 
+int j = rand % (i+1); // va permetre de mélanger efficacement les cartes, pourquoi pas rand %25 comme d'habitude ? On pourrais piocher une carte déja placée a la fin, ça permet de ne plus toucher les cartes deja melangées 
 int temp= carte[i]; 
 carte[i]= carte[j];
 carte[j]=temp;// cet échange de variable va permettre d'échanger la carte de base avec une carte choisit aléatoirement sans détruire les données (lié chap tri)
-}// a noter qu'on uilise d'abord un tableau 1D parce que c'est plus simple a manipuler, (pr melanger un tableau 2D il faut gerer des paires de coordonnes, et en voulant placer les monstres sur le plateau risque detomber sur la meme case en tirant (devien loud )
+} // On uilise d'abord un tableau 1D parce que c'est plus simple a manipuler, (pour mélanger un tableau 2D il faut gérer des paires de coordonnées, et en voulant placer les monstres sur le plateau on risque de tomber sur la même case plusieurs fois en tirant aléatoirement. (le programme devient loud car il faudra gérer ces tirages. )
 
-void remplir_plateau (char carte[25], char plateau[5][5]){ //le tableau de carte créer précedemment et le plateau a remplir
+void remplir_plateau (char carte[25], char plateau[5][5]){ // La fonction va nous permettre de remplir le plateau, prend en paramètre le tableau de carte créer précedemment et le plateau a remplir.
 int a=0; // va augmenter de 1 en 1, va permettre de parcourir toutes les cartes
 for (int i=0; i<5; i++){ // Il s'agit d'un jeu 5x5, on parcourt les 5 cases verticales 
-for (int j=0; j<5; j++){ // parcourt horizontalement
-plateau [i][j]= carte[a];// je pioche une carte et je l'a me sur le plateau, ca commence a 0 car on a initialisé "a" a 0
-a++; // je prends la carte suivante, sans ca on piocherai toujours la meme carte
-} // fonction permettant de remplir tout le plateau avec les cartes contenant le bon nombre de monstres etc.
-
+for (int j=0; j<5; j++){ // parcourt les cases horizontalement
+plateau [i][j]= carte[a];// permet de piocher une carte et la mettre sur le plateau, ça commence a 0 car on a initialisé "a" à 0.
+a++; // je prends la carte suivante, sans ça on piocherai toujours la même carte
+} // 
 #define MIROIR 2
 #define TORCHE 3
 #define HACHE 4
-#define ARC 5 // Quel armes correspond a quoi
+#define ARC 5 // Permet de savoir quel arme correspond à quel nombre.
+
 #define VICTOIRE 1
-#define DEFAITE 0
+#define DEFAITE 0 // Constante qui défini défaites et victoires.
 
 
-int choisir_arme(){ // fonction qui permet a l'uilisateur de choisir son arme
+int choisir_arme() { // fonction qui permet a l'uilisateur de choisir son arme
 int choix; 
 int valide =0;
 do {
 printf("Choisissez votre arme :" \n);
 scanf("%d", &choix); 
-if(choix <2 || choix>5){
+if(choix <2 || choix>5){ // Si le choix de l'utilisateur sort de l'intervalle attribuée aux armes. 
 printf("Nombre invalide ! Saisir un nombre enre 1 et 4.\n);
 }
 }while (choix < 2|| choix > 5); 
@@ -63,9 +63,9 @@ return choix;
 }
 
 
-int resoudre_combat(int arme, char monstre){
-if(monstre_case== 'B'){
-if(arme== MIROIR) {// on utilise direct le nom des armes grace au define 
+int resoudre_combat(int arme, char monstre) { // Fonction permettant de coder la logique Arme Versus Monstre.
+if(monstre_case== 'B') {
+if(arme== MIROIR) {// on utilise directement le nom des armes grâce au "#define" 
 printf("Le Basilic se pétrifie, Victoire"/n);
 return VICOIRE;
 }else{
@@ -73,11 +73,11 @@ printf(" Les yeux du basilic vous transforme en pierre, Defaite"\n);
 return DEFAITE;
 }
 }else if(monstre == 'Z') {
-if (arme==TORCHE) {
-printf("Le zombie ne supporte pas, Victoire.\n");
+if (arme == TORCHE) {
+printf("Le zombie ne supporte pas, le feu en vient à bout. Victoire.\n");
 return VICTOIRE; 
 }else{ 
-printf("Le zombie vous a attrapé, Defaite\n); 
+printf("Le zombie vous a attrapé, il est insensible à votre arme. Defaite\n); 
 return DEFAITE;
 }
 }else if (monstre== 'T'){
