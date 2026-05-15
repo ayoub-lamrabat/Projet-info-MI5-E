@@ -326,6 +326,7 @@ printf("- %s : %d cases parcourues\n", noms_partie[i], cases_partie[i]);
 }
 printf("\n");
 }
+
 /*
 FONCTION : afficher_fin_partie()
 Objectif : afficher l'écran de fin de partie
