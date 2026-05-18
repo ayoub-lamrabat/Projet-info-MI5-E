@@ -1,6 +1,6 @@
 #define TAILLE 5
 #define MAX_NOM 50
-#define MAX_JOUEURS 100     /* Nombre maximum de joueurs stockés */
+#define MAX_JOUEURS 4    /* Nombre maximum de joueurs stockés */
 #define TAILLE_GRILLE 5     /* Taille du plateau de jeu (5x5) */
 
 #define MIROIR 3
