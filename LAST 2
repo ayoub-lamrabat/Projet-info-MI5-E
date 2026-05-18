@@ -41,7 +41,7 @@ typedef struct {
     int classe;
     int a_trouve_coffre;    // Au début = 0 pour tous les joueurs.
     int a_trouve_arme;      // Au début = 0.
-    int nb_pas;              // Pour tes statistiques (Étudiant C)
+    int nb_pas;              // Pour tes statistiques 
     int actif;              // 1 = en jeu, 0 = a quitté
 } JoueurEnJeu;
 
