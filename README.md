@@ -125,24 +125,7 @@ Si tous les joueurs abandonnent la partie sans qu'un vainqueur soit désigné, l
  
 ---
  
-## Compilation et lancement
- 
-**Prérequis**
- 
-- Un compilateur C compatible C99 ou supérieur (GCC recommandé).
-- Un terminal compatible avec les codes couleur ANSI (Linux, macOS, ou Windows Terminal sous Windows 10/11).
-**Compilation**
- 
-```bash
-gcc -o memo_rpg memo_rpg.c
-```
- 
-**Lancement**
- 
-```bash
-./memo_rpg
-```
- 
+
 **Navigation dans le menu**
  
 Au lancement, un menu principal propose trois options :
