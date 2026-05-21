@@ -139,12 +139,7 @@ A la fin d'une partie, il est possible de rejouer directement avec les mêmes jo
  
 ## Structure du projet
  
-```
-memo_rpg/
-├── memo_rpg.c       # Code source complet
-├── stats.txt        # Historique des joueurs (généré automatiquement au premier lancement)
-└── README.md        # Ce fichier
-```
+
  
 Le fichier `stats.txt` est créé automatiquement dans le répertoire courant lors de la première sauvegarde. Il ne doit pas être supprimé entre deux sessions si vous souhaitez conserver le classement et l'historique des joueurs.
  
@@ -152,7 +147,7 @@ Le code source est organisé en sections clairement délimitées par des comment
  
 | Section | Contenu |
 |---|---|
-| Constantes et macros | Taille du plateau, codes couleur ANSI, identifiants d'armes |
+| Constantes  | Taille du plateau, codes couleur ANSI, identifiants d'armes |
 | Structures | `Case`, `JoueurEnJeu`, `Joueur` |
 | Fonctions utilitaires | Saisie sécurisée, vidage de buffer, effacement de l'écran |
 | Remplissage | Initialisation des cartes, mélange aléatoire, remplissage du plateau |
