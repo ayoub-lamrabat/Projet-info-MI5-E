@@ -1,3 +1,5 @@
+##PROJET INFO MI5-E
+
 ## Présentation du projet
  
 Ce projet a été réalisé dans le cadre du cours d'informatique de la filière préING1 à CY Tech. L'objectif pédagogique est de concevoir et implémenter un programme complet en C, en mettant en pratique les notions de tableaux, structures, pointeurs, fichiers, et organisation modulaire du code.
