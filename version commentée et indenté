@@ -1,0 +1,1341 @@
+//  Projet Informatique préING1 — 2025-2026
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+// ============================================================
+//  CONSTANTES GLOBALES
+// ============================================================
+#define TAILLE      5
+#define MAX_NOM     50
+#define MAX_JOUEURS 4
+#define MAX_HISTO   100  // Nombre maximum de joueurs différents mémorisés dans le fichier de stats
+
+#define MIROIR 3
+#define TORCHE 4
+#define HACHE  5
+#define ARC    6
+
+#define VICTOIRE 1
+#define DEFAITE  0
+#define RIEN     2
+
+// Codes couleur ANSI : permettent d'afficher du texte coloré dans le terminal
+// Utilisation : printf(ROUGE "texte" RESET) affiche "texte" en rouge puis revient au style normal
+#define RESET     "\033[0m"   // Remet le style par défaut (annule couleur et gras)
+#define GRAS      "\033[1m"
+#define ROUGE     "\033[31m"
+#define VERT      "\033[32m"
+#define JAUNE     "\033[33m"
+#define BLEU      "\033[34m"
+#define MAGENTA   "\033[35m"
+#define CYAN      "\033[36m"
+#define BLANC     "\033[37m"
+#define FOND_NOIR "\033[40m"
+
+// ============================================================
+//  STRUCTURES DE DONNÉES
+// ============================================================
+typedef struct {
+    char type;    // Contenu de la case
+    int  visible; // 0 = face cachée , 1 = révélée
+} Case;
+
+typedef struct {
+    int  x, y;            // Position actuelle du joueur sur le plateau
+    int  x_dep, y_dep;    // Position de départ
+    char nom[MAX_NOM];
+    int  classe;          // Classe choisie : 0=Guerrier 1=Ranger 2=Magicien 3=Voleur
+    int  a_trouve_coffre;
+    int  a_trouve_arme;
+    int  nb_pas;          // Nombre de cases visitées dans le donjon (pour les stats)
+    int  actif;           // Vaut 1 si le joueur joue encore, 0 s'il a tapé Q pour quitter
+} JoueurEnJeu;
+
+typedef struct {
+    char nom[MAX_NOM];
+    int  parties;
+    int  victoires;
+    int  cases_parcourues;
+} Joueur;
+// ============================================================
+//  FONCTIONS UTILITAIRES (saisie et affichage de base)
+// ============================================================
+/*
+ * effacer_ecran
+ * Efface tout le contenu visible du terminal et place le curseur
+ * en haut à gauche. Utilisé avant chaque affichage du plateau
+ * pour éviter que les anciens affichages s'accumulent.
+ */
+void effacer_ecran() {
+    printf("\033[2J\033[H");
+}
+/*
+ * vider_buffer
+ * Après un scanf(), les caractères restants dans le buffer clavier
+ * (notamment le '\n' final) peuvent perturber la prochaine saisie.
+ * Cette fonction lit et jette tous ces caractères jusqu'à la fin de ligne.
+ */
+void vider_buffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
+/*
+ * lire_nom
+ * Affiche le message d'invite puis lit un nom de joueur dans nom[].
+ */
+void lire_nom(char nom[], char message[]) {
+    int valide = 0;
+    while (valide == 0) {
+        printf("%s", message);
+        if (fgets(nom, MAX_NOM, stdin) == NULL) {
+            printf("Erreur de saisie.\n");
+            continue;
+        }
+        if (strlen(nom) > 0 && nom[strlen(nom) - 1] == '\n') {
+            nom[strlen(nom) - 1] = '\0';
+        }
+        if (strlen(nom) > 0) {
+            valide = 1;
+        } else {
+            printf("Erreur : le nom ne peut pas etre vide.\n");
+        }
+    }
+}
+
+/*
+ * lire_entier
+ * Affiche le message d'invite et lit un entier compris entre min et max.
+ */
+int lire_entier(char message[], int min, int max) {
+    int valeur;
+    printf("%s", message);
+    while (scanf("%d", &valeur) != 1 || valeur < min || valeur > max) {
+        vider_buffer();
+        printf("Valeur invalide, entrez un nombre entre %d et %d : ", min, max);
+    }
+    vider_buffer();
+    return valeur;
+}
+// ============================================================
+//  INITIALISATION DU PLATEAU
+// ============================================================
+/*
+ * remplir_cartes
+ * Remplit le tableau carte[25] avec exactement les 25 cases du jeu,
+ */
+void remplir_cartes(char carte[25]) {
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        carte[i] = 'B'; // 4 Basilics  (indices 0 à 3)
+    }
+    for (i = 4; i < 8; i++) {
+        carte[i] = 'T'; // 4 Trolls    (indices 4 à 7)
+    }
+    for (i = 8; i < 12; i++) {
+        carte[i] = 'Z'; // 4 Zombies   (indices 8 à 11)
+    }
+    for (i = 12; i < 16; i++) {
+        carte[i] = 'H'; // 4 Harpies   (indices 12 à 15)
+    }
+    for (i = 16; i < 18; i++) {
+        carte[i] = 'C'; // 2 Coffres   (indices 16 à 17)
+    }
+    carte[18] = 'E'; // Épée de feu
+    carte[19] = 'F'; // Bâton familier
+    carte[20] = 'D'; // Dague du sommeil
+    carte[21] = 'G'; // Grimoire interdit
+    carte[22] = 'P'; // Portail magique
+    carte[23] = 'M'; // Totem #1
+    carte[24] = 'M'; // Totem #2
+}
+
+/*
+ * melanger_carte
+ * Mélange aléatoirement le tableau carte[] de taille n.
+ */
+void melanger_carte(char carte[], int n) {
+    int i;
+
+    for (i = n - 1; i > 0; i--) {
+        int  j    = rand() % (i + 1); // Choisit un indice aléatoire entre 0 et i inclus
+        char temp = carte[i];
+
+        carte[i] = carte[j];
+        carte[j] = temp;
+    }
+}
+
+/*
+ * remplir_plateau
+ * Copie les 25 cartes (déjà mélangées) dans le tableau 2D plateau[5][5].
+ * Toutes les cases sont initialisées à visible=0 (face cachée).
+ */
+void remplir_plateau(char carte[25], Case plateau[5][5]) {
+    int a = 0, i, j; // 'a' est l'indice courant dans le tableau 1D des cartes
+
+    for (i = 0; i < 5; i++) {
+        for (j = 0; j < 5; j++) {
+            plateau[i][j].type = carte[a++]; // Affecte la carte suivante à cette case
+            plateau[i][j].visible = 0;       // Cachée au départ (brouillard de guerre)
+        }
+    }
+}
+
+/*
+ * cacher_plateau
+ * Remet toutes les cases du plateau en état "caché" (visible = 0).
+ * Appelé quand un joueur perd un combat : tout le donjon redevient
+ * mystérieux pour tout le monde.
+ */
+void cacher_plateau(Case plateau[5][5]) {
+    int r, c;
+
+    for (r = 0; r < 5; r++) {
+        for (c = 0; c < 5; c++) {
+            plateau[r][c].visible = 0;
+        }
+    }
+}
+// ============================================================
+//  LOGIQUE DE COMBAT ET EFFETS SPÉCIAUX
+// ============================================================
+
+/*
+ * choisir_arme
+ * Affiche le menu des 4 armes disponibles et demande au joueur
+ * de choisir en tapant 3, 4, 5 ou 6. La saisie est répétée
+ */
+int choisir_arme() {
+    int choix;
+    printf(CYAN "\n  Choisissez votre arme pour ce deplacement :\n" RESET);
+    printf("  " JAUNE "[3]" RESET " Miroir    -> contre le Basilic\n");
+    printf("  " JAUNE "[4]" RESET " Torche    -> contre le Zombie\n");
+    printf("  " JAUNE "[5]" RESET " Hache     -> contre le Troll\n");
+    printf("  " JAUNE "[6]" RESET " Arc       -> contre la Harpie\n");
+    printf("  Votre choix : ");
+    do {
+        if (scanf("%d", &choix) != 1) {
+            vider_buffer();
+            choix = 0;
+        }
+        if (choix < 3 || choix > 6) {
+            printf(ROUGE "  Nombre invalide ! Entrez 3, 4, 5 ou 6 : " RESET);
+        }
+    } while (choix < 3 || choix > 6);
+    vider_buffer();
+    return choix;
+}
+
+/*
+ * resoudre_combat
+ * Compare l'arme choisie par le joueur avec le type de monstre rencontré.
+ * Chaque monstre n'est vulnérable qu'à une seule arme :
+ */
+int resoudre_combat(int arme, char monstre) {
+    if (monstre == 'B') { // Basilic
+        if (arme == MIROIR) {
+            printf(VERT "  Victoire contre le Basilic !\n" RESET);
+            return VICTOIRE;
+        } else {
+            printf(ROUGE "  Petrifie par le Basilic... Il fallait le Miroir !\n" RESET);
+            return DEFAITE;
+        }
+    } else if (monstre == 'Z') { // Zombie
+        if (arme == TORCHE) {
+            printf(VERT "  Zombie vaincu !\n" RESET);
+            return VICTOIRE;
+        } else {
+            printf(ROUGE "  Devore par le Zombie... Il fallait la Torche !\n" RESET);
+            return DEFAITE;
+        }
+    } else if (monstre == 'T') { // Troll
+        if (arme == HACHE) {
+            printf(VERT "  Troll vaincu !\n" RESET);
+            return VICTOIRE;
+        } else {
+            printf(ROUGE "  Le Troll vous tue... Il fallait la Hache !\n" RESET);
+            return DEFAITE;
+        }
+    } else if (monstre == 'H') { // Harpie
+        if (arme == ARC) {
+            printf(VERT "  Harpie vaincue !\n" RESET);
+            return VICTOIRE;
+        } else {
+            printf(ROUGE "  La Harpie vous tue... Il fallait l'Arc !\n" RESET);
+            return DEFAITE;
+        }
+    }
+    return RIEN;
+}
+
+/*
+ * logique_portail
+ * Gère l'effet du Portail Magique ('P') :
+ * Le joueur choisit n'importe quelle case du plateau (ligne 0-4, colonne 0-4)
+ * et y est téléporté immédiatement.
+ *
+ * Cette fonction modifie seulement la position du joueur.
+ * La révélation et l'effet de la case d'arrivée sont gérés dans la boucle de jeu.
+ */
+void logique_portail(int *joueur_x, int *joueur_y) {
+    int ligne;
+    int colonne;
+
+    printf(MAGENTA "  Portail Magique ! Choisissez une case cible.\n" RESET);
+    do {
+        printf("  Nouvelle ligne (0-4) : ");
+
+        if (scanf("%d", &ligne) != 1) {
+            vider_buffer();
+            ligne = -1;
+        }
+        printf("  Nouvelle colonne (0-4) : ");
+        if (scanf("%d", &colonne) != 1) {
+            vider_buffer();
+            colonne = -1;
+        }
+        if (ligne < 0 || ligne > 4 || colonne < 0 || colonne > 4) {
+            printf(ROUGE "  Coordonnees invalides ! Ligne et colonne doivent etre entre 0 et 4.\n" RESET);
+        }
+    } while (ligne < 0 || ligne > 4 || colonne < 0 || colonne > 4);
+    vider_buffer();
+    *joueur_x = colonne;
+    *joueur_y = ligne;
+    printf(MAGENTA "  Teleportation en [ligne %d][col %d] !\n" RESET, ligne, colonne);
+}
+
+/*
+ * logique_totem
+ * Gère l'effet du Totem de transmutation ('M') :
+ *   1. Le joueur choisit une case cachée n'importe où sur le plateau.
+ *   2. Le totem et cette case échangent leurs contenus (sans les révéler).
+ *   3. Le tour se termine : le joueur retourne à sa position de départ
+ *      et TOUT le plateau est remis face cachée.
+ */
+void logique_totem(Case plateau[5][5], int *x, int *y, int depx, int depy) {
+    int  cx, cy; // Coordonnées de la case cible choisie par le joueur
+    Case temp;   // Variable temporaire pour l'échange des deux cases
+    printf(MAGENTA "  Totem de transmutation ! Choisissez une case a echanger.\n" RESET);
+    do {
+        printf("  Ligne cible (0-4) : ");
+        if (scanf("%d", &cy) != 1) {
+            vider_buffer();
+            cy = -1;
+        }
+        printf("  Colonne cible (0-4) : ");
+
+        if (scanf("%d", &cx) != 1) {
+            vider_buffer();
+            cx = -1;
+        }
+        if (cx < 0 || cx > 4 || cy < 0 || cy > 4) {
+            printf(ROUGE "  Coordonnees invalides !\n" RESET);
+        }
+    } while (cx < 0 || cx > 4 || cy < 0 || cy > 4);
+    vider_buffer();
+    temp = plateau[*y][*x];
+    plateau[*y][*x] = plateau[cy][cx];
+    plateau[cy][cx] = temp;
+    // Les deux cases échangées redeviennent cachées : personne ne sait ce qu'elles contiennent
+    plateau[*y][*x].visible = 0;
+    plateau[cy][cx].visible = 0;
+
+    // Le joueur est renvoyé à sa position de départ
+    *x = depx;
+    *y = depy;
+
+    printf(MAGENTA "  Echange effectue ! Retour au depart.\n" RESET);
+}
+/*
+ * verifier_victoire
+ * Vérifie si la case sur laquelle vient d'arriver le joueur lui permet
+ * de progresser vers la victoire, ou de gagner définitivement.
+ */
+int verifier_victoire(int *coffre, int *arme_trouvee, char case_actuelle, char arme_recherche) {
+    if (case_actuelle == 'C') {
+        printf(JAUNE "  Coffre trouve !\n" RESET);
+        *coffre = 1;
+        if (*arme_trouvee == 0) {
+            printf("  Il vous manque encore votre arme antique...\n");
+        }
+    }
+    if (case_actuelle == arme_recherche) {
+        if (case_actuelle == 'E') {
+            printf(VERT "  Epee de feu trouvee !\n" RESET);
+        } else if (case_actuelle == 'F') {
+            printf(VERT "  Baton familier trouve !\n" RESET);
+        } else if (case_actuelle == 'G') {
+            printf(VERT "  Grimoire interdit trouve !\n" RESET);
+        } else if (case_actuelle == 'D') {
+            printf(VERT "  Dague du sommeil trouvee !\n" RESET);
+        }
+        *arme_trouvee = 1;
+        if (*coffre == 0) {
+            printf("  Il vous manque encore un coffre au tresor...\n");
+        }
+    }
+    if ((case_actuelle == 'E' || case_actuelle == 'F' ||case_actuelle == 'G' || case_actuelle == 'D') &&case_actuelle != arme_recherche) {
+        printf(JAUNE "  Arme antique trouvee, mais ce n'est pas la votre !\n" RESET);
+    }
+
+    if (*coffre == 1 && *arme_trouvee == 1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+// ============================================================
+//  AFFICHAGE DU PLATEAU ET DES STATUTS
+// ============================================================
+/*
+ * afficher_statut_joueur
+ * Affiche sur une seule ligne le résumé d'un joueur :
+ * son numéro, son nom, sa classe, s'il a le coffre, s'il a son arme,
+ * et le nombre de cases parcourues. Si le joueur a quitté, affiche [QUITTE].
+ * Chaque joueur a une couleur différente pour le distinguer facilement.
+ */
+void afficher_statut_joueur(JoueurEnJeu *j, int idx) {
+    // Chaque joueur a sa propre couleur : J1=Cyan, J2=Jaune, J3=Vert, J4=Magenta
+    char *couleurs[4] = { CYAN, JAUNE, VERT, MAGENTA };
+    printf(GRAS "%s  J%d: %-12s" RESET, couleurs[idx], idx + 1, j->nom);
+    if (j->classe == 0) {
+        printf("Guerrier ");
+    } else if (j->classe == 1) {
+        printf("Ranger   ");
+    } else if (j->classe == 2) {
+        printf("Magicien ");
+    } else if (j->classe == 3) {
+        printf("Voleur   ");
+    }
+    printf("| Coffre: ");
+    if (j->a_trouve_coffre) {
+       printf(VERT "OUI" RESET);
+   }else {
+      printf(ROUGE "NON" RESET);
+}
+    printf(" | Arme: ");
+    if (j->a_trouve_arme) {
+      printf(VERT "OUI" RESET);
+   }else {
+      printf(ROUGE "NON" RESET);
+}
+    printf(" | Pas: %d", j->nb_pas);
+    if (!j->actif) {
+        printf(ROUGE " [QUITTE]" RESET);
+    }
+    printf("\n");
+}
+
+/*
+ * afficher_plateau
+ * Efface l'écran et affiche l'état complet du jeu :
+ *   - Le titre du jeu
+ *   - Le statut de tous les joueurs (nom, classe, coffre, arme, pas)
+ *   - La légende des symboles
+ *   - Le donjon 5x5 avec les cases cachées ("~~~"), révélées ou occupées par un joueur
+ *   - Les zones de départ Nord et Sud (hors plateau) si des joueurs y attendent
+ *
+ * Les cases cachées s'affichent "~~~". Les cases révélées montrent leur contenu.
+ * Si un joueur est sur une case, on affiche "J1", "J2" etc. à la place du contenu.
+ */
+void afficher_plateau(Case plateau[TAILLE][TAILLE], JoueurEnJeu tab_j[], int nb_joueurs, int idx_actuel) {
+    int i, j, k;
+    JoueurEnJeu *j_actuel = &tab_j[idx_actuel];
+    char *couleurs[4] = { CYAN, JAUNE, VERT, MAGENTA };
+    effacer_ecran();
+    // En-tête du jeu
+    printf(CYAN GRAS "  +===========================================+\n" RESET);
+    printf(CYAN GRAS "  |" RESET BLANC GRAS "           MEMO-RPG  -  LE DONJON           " CYAN GRAS "|\n" RESET);
+    printf(CYAN GRAS "  +===========================================+\n\n" RESET);
+    for (k = 0; k < nb_joueurs; k++) {
+        printf("  ");
+        afficher_statut_joueur(&tab_j[k], k);
+    }
+    printf("\n");
+    printf(GRAS "  >> Tour de : " RESET);
+    printf(JAUNE GRAS "%s\n\n" RESET, j_actuel->nom);
+    printf("  Legende : ");
+    printf(ROUGE " Bs" RESET "=Basilic ");
+    printf(ROUGE " Zm" RESET "=Zombie ");
+    printf(ROUGE " Tr" RESET "=Troll ");
+    printf(ROUGE " Hp" RESET "=Harpie | ");
+    printf(JAUNE " Co" RESET "=Coffre ");
+    printf(VERT " Ep/Bt/Gr/Dg" RESET "=Armes | ");
+    printf(MAGENTA " Po" RESET "=Portail ");
+    printf(MAGENTA " To" RESET "=Totem\n\n");
+    // Affichage des numéros de colonnes au-dessus du donjon.
+    printf("        ");
+    for (j = 0; j < TAILLE; j++) {
+        printf(GRAS "  %d  " RESET, j);
+    }
+    printf("\n");
+    /*
+     * Affichage des joueurs situés au nord du donjon.
+     * Ils sont hors du plateau : leur position est y = -1.
+     */
+    printf("        ");
+    for (j = 0; j < TAILLE; j++) {
+        int joueur_ici = -1;
+        for (k = 0; k < nb_joueurs; k++) {
+            if (tab_j[k].actif && tab_j[k].y == -1 && tab_j[k].x == j) {
+                joueur_ici = k;
+                break;
+            }
+        }
+        if (joueur_ici != -1) {
+            printf(GRAS "%s[J%d] " RESET, couleurs[joueur_ici], joueur_ici + 1);
+        } else {
+            printf("     ");
+        }
+    }
+    printf("\n");
+    // Ligne de bordure supérieure du donjon
+    printf("      +");
+    for (j = 0; j < TAILLE; j++) {
+        printf("-----");
+
+        if (j < TAILLE - 1) {
+            printf("+");
+        }
+    }
+    printf("+\n");
+    // Affichage ligne par ligne du donjon (lignes 0 à 4)
+    for (i = 0; i < TAILLE; i++) {
+        printf("  " GRAS "%d" RESET "    |", i); // Numéro de la ligne
+        for (j = 0; j < TAILLE; j++) {
+            // On cherche si un joueur actif se trouve sur cette case
+            int joueur_ici = -1;
+            for (k = 0; k < nb_joueurs; k++) {
+                if (tab_j[k].actif && tab_j[k].y == i && tab_j[k].x == j) {
+                    joueur_ici = k;
+                    break;
+                }
+            }
+            if (joueur_ici != -1) {
+                // Un joueur est sur cette case : on affiche son numéro coloré
+                printf(GRAS "%s J%d  " RESET, couleurs[joueur_ici], joueur_ici + 1);
+            } else if (plateau[i][j].visible == 1) {
+                // La case a été révélée : on affiche son contenu avec la bonne couleur
+                char t = plateau[i][j].type;
+                switch (t) {
+                    case 'B': printf(ROUGE   " Bs  " RESET); break; // Basilic
+                    case 'Z': printf(ROUGE   " Zm  " RESET); break; // Zombie
+                    case 'T': printf(ROUGE   " Tr  " RESET); break; // Troll
+                    case 'H': printf(ROUGE   " Hp  " RESET); break; // Harpie
+                    case 'E': printf(VERT    " Ep  " RESET); break; // Épée de feu
+                    case 'F': printf(VERT    " Bt  " RESET); break; // Bâton familier
+                    case 'G': printf(VERT    " Gr  " RESET); break; // Grimoire
+                    case 'D': printf(VERT    " Dg  " RESET); break; // Dague
+                    case 'C': printf(JAUNE   " Co  " RESET); break; // Coffre
+                    case 'M': printf(MAGENTA " To  " RESET); break; // Totem
+                    case 'P': printf(MAGENTA " Po  " RESET); break; // Portail
+                    default:  printf(" [?] ");               break;
+                }
+            } else {
+                printf(FOND_NOIR BLANC " ~~~ " RESET);
+            }
+
+            printf("|");
+        }
+
+        printf("\n");
+
+        if (i < TAILLE - 1) {
+            printf("      +");
+
+            for (j = 0; j < TAILLE; j++) {
+                printf("-----");
+
+                if (j < TAILLE - 1) {
+                    printf("+");
+                }
+            }
+
+            printf("+\n");
+        }
+    }
+
+    printf("      +");
+    for (j = 0; j < TAILLE; j++) {
+        printf("-----");
+
+        if (j < TAILLE - 1) {
+            printf("+");
+        }
+    }
+    printf("+\n");
+    /*
+     * Affichage des joueurs situés au sud du donjon.
+     * Ils sont hors du plateau : leur position est y = 5.
+     */
+    printf("        ");
+    for (j = 0; j < TAILLE; j++) {
+        int joueur_ici = -1;
+        for (k = 0; k < nb_joueurs; k++) {
+            if (tab_j[k].actif && tab_j[k].y == 5 && tab_j[k].x == j) {
+                joueur_ici = k;
+                break;
+            }
+        }
+        if (joueur_ici != -1) {
+            printf(GRAS "%s[J%d] " RESET, couleurs[joueur_ici], joueur_ici + 1);
+        } else {
+            printf("     ");
+        }
+    }
+    printf("\n\n");
+    if (j_actuel->y == -1 || j_actuel->y == 5) {
+        printf(JAUNE GRAS "   POSITION ACTUELLE : " RESET
+               "En attente a l'exterieur du donjon (Case [%d]).\n",
+               j_actuel->x);
+    }
+}
+
+/*
+ * afficher_plateau_final
+ * Affiche le plateau entièrement révélé à la fin de la partie,
+ * pour que tous les joueurs puissent voir où se trouvaient toutes les cases.
+ */
+void afficher_plateau_final(Case plateau[TAILLE][TAILLE]) {
+    int i, j;
+    printf(CYAN GRAS "\n  Voici le contenu du donjon :\n\n" RESET);
+    printf("        ");
+    for (j = 0; j < TAILLE; j++) {
+        printf(GRAS "  %d  " RESET, j);
+    }
+    printf("\n");
+
+    printf("      +");
+    for (j = 0; j < TAILLE; j++) {
+        printf("-----");
+
+        if (j < TAILLE - 1) {
+            printf("+");
+        }
+    }
+    printf("+\n");
+    for (i = 0; i < TAILLE; i++) {
+        printf("  " GRAS "%d" RESET "    |", i);
+        for (j = 0; j < TAILLE; j++) {
+            char t = plateau[i][j].type;
+            switch (t) {
+                case 'B': printf(ROUGE   " Bs  " RESET); break;
+                case 'Z': printf(ROUGE   " Zm  " RESET); break;
+                case 'T': printf(ROUGE   " Tr  " RESET); break;
+                case 'H': printf(ROUGE   " Hp  " RESET); break;
+                case 'E': printf(VERT    " Ep  " RESET); break;
+                case 'F': printf(VERT    " Bt  " RESET); break;
+                case 'G': printf(VERT    " Gr  " RESET); break;
+                case 'D': printf(VERT    " Dg  " RESET); break;
+                case 'C': printf(JAUNE   " Co  " RESET); break;
+                case 'M': printf(MAGENTA " To  " RESET); break;
+                case 'P': printf(MAGENTA " Po  " RESET); break;
+                default:  printf(" [?] "); break;
+            }
+            printf("|");
+        }
+        printf("\n");
+        if (i < TAILLE - 1) {
+            printf("      +");
+            for (j = 0; j < TAILLE; j++) {
+                printf("-----");
+                if (j < TAILLE - 1) {
+                    printf("+");
+                }
+            }
+
+            printf("+\n");
+        }
+    }
+    printf("      +");
+    for (j = 0; j < TAILLE; j++) {
+        printf("-----");
+
+        if (j < TAILLE - 1) {
+            printf("+");
+        }
+    }
+    printf("+\n\n");
+}
+/*
+ * init_positions_depart
+ * Place chaque joueur à sa position de départ autour du donjon.
+ * Les positions sont aux coins du plateau pour garantir une symétrie :
+ *   J1 → Nord  colonne 0  (y=-1, x=0)
+ *   J2 → Sud   colonne 4  (y=5,  x=4)
+ *   J3 → Nord  colonne 4  (y=-1, x=4)
+ *   J4 → Sud   colonne 0  (y=5,  x=0)
+ */
+void init_positions_depart(JoueurEnJeu tab_j[], int nb_joueurs) {
+    tab_j[0].x_dep = 0;
+    tab_j[0].y_dep = -1; // J1 : Nord-Ouest
+    if (nb_joueurs > 1) {
+        tab_j[1].x_dep = 4;
+        tab_j[1].y_dep = 5; // J2 : Sud-Est
+    }
+    if (nb_joueurs > 2) {
+        tab_j[2].x_dep = 4;
+        tab_j[2].y_dep = -1; // J3 : Nord-Est
+    }
+    if (nb_joueurs > 3) {
+        tab_j[3].x_dep = 0;
+        tab_j[3].y_dep = 5; // J4 : Sud-Ouest
+    }
+    // Position initiale = position de départ pour tous
+    int i;
+    for (i = 0; i < nb_joueurs; i++) {
+        tab_j[i].x = tab_j[i].x_dep;
+        tab_j[i].y = tab_j[i].y_dep;
+    }
+}
+// ============================================================
+//  GESTION DU FICHIER DE STATISTIQUES (stats.txt)
+// ============================================================
+/*
+ * extraire_nom
+ * Lit le nom depuis une ligne du fichier stats.txt qui a le format "Nom: prenom".
+ * Le résultat est stocké dans nom[].
+ */
+void extraire_nom(char ligne[], char nom[]) {
+    int i = 5, j = 0; // On saute les 5 premiers caractères : 'N','o','m',':',' '
+    while (ligne[i] != '\0' && ligne[i] != '\n') {
+        nom[j++] = ligne[i++];
+    }
+    nom[j] = '\0';
+}
+/*
+ * extraire_nombre
+ * Lit un entier depuis une ligne du format "Parties: 7" ou "Victoires: 3".
+ * Avance dans la ligne jusqu'au ':', saute l'espace, puis lit les chiffres.
+ * Retourne le nombre converti avec atoi().
+ */
+int extraire_nombre(char ligne[]) {
+    char texte_nombre[20];
+    int i = 0, j = 0;
+    while (ligne[i] != ':' && ligne[i] != '\0') {
+        i++;
+    }
+    if (ligne[i] == ':') {
+        i++;
+    }
+    if (ligne[i] == ' ') {
+        i++;
+    }
+    while (ligne[i] != '\0' && ligne[i] != '\n') {
+        texte_nombre[j++] = ligne[i++];
+    }
+    texte_nombre[j] = '\0';
+    return atoi(texte_nombre);
+}
+/*
+ * lire_joueur_fichier
+ * Lit les données d'un joueur depuis le fichier stats.txt ouvert.
+ * Chaque joueur occupe exactement 5 lignes dans le fichier :
+ * Retourne 1 si un joueur a été lu avec succès, 0 si fin de fichier.
+ */
+int lire_joueur_fichier(FILE *fichier, Joueur *joueur) {
+    char ligne[100];
+    if (fgets(ligne, 100, fichier) == NULL) {
+        return 0; // Fin du fichier
+    }
+    extraire_nom(ligne, joueur->nom);
+    if (fgets(ligne, 100, fichier) == NULL) {
+        return 0;
+    }
+    joueur->parties = extraire_nombre(ligne);
+    if (fgets(ligne, 100, fichier) == NULL) {
+        return 0;
+    }
+    joueur->victoires = extraire_nombre(ligne);
+    if (fgets(ligne, 100, fichier) == NULL) {
+        return 0;
+    }
+    joueur->cases_parcourues = extraire_nombre(ligne);
+    fgets(ligne, 100, fichier); // Lit et ignore la ligne "---" séparatrice
+
+    return 1;
+}
+
+/*
+ * chercher_joueur
+ * Parcourt le tableau joueurs[] et cherche un joueur par son nom.
+ * La comparaison est faite grace strcmp.
+ * Retourne l'indice du joueur trouvé, ou -1 s'il n'existe pas.
+ */
+int chercher_joueur(Joueur joueurs[], int nb_joueurs, char nom[]) {
+    int i;
+
+    for (i = 0; i < nb_joueurs; i++) {
+        if (strcmp(joueurs[i].nom, nom) == 0) {
+            return i;
+        }
+    }
+
+    return -1; // Joueur non trouvé
+}
+
+/*
+ * ajouter_joueur
+ * Cherche un joueur par nom dans l'historique. S'il n'existe pas encore,
+ * il est ajouté à la fin du tableau avec des statistiques à zéro.
+ */
+int ajouter_joueur(Joueur joueurs[], int *nb_joueurs, char nom[]) {
+    int pos = chercher_joueur(joueurs, *nb_joueurs, nom);
+    if (pos == -1) { // Joueur inconnu : on le crée
+        if (*nb_joueurs < MAX_HISTO) {
+            pos = *nb_joueurs;
+            strncpy(joueurs[pos].nom, nom, MAX_NOM - 1);
+            joueurs[pos].nom[MAX_NOM - 1] = '\0';
+            joueurs[pos].parties          = 0;
+            joueurs[pos].victoires        = 0;
+            joueurs[pos].cases_parcourues = 0;
+            (*nb_joueurs)++;
+        } else {
+            printf("Erreur : historique plein.\n");
+        }
+    }
+    return pos;
+}
+/*
+ * charger_historique
+ * Ouvre le fichier "stats.txt" et charge tous les joueurs enregistrés
+ * dans le tableau joueurs[].
+ */
+int charger_historique(Joueur joueurs[]) {
+    FILE *fichier = fopen("stats.txt", "r");
+    int nb_joueurs = 0;
+    if (fichier == NULL) {
+        return 0;
+    }
+    while (nb_joueurs < MAX_HISTO && lire_joueur_fichier(fichier, &joueurs[nb_joueurs])) {
+        nb_joueurs++;
+    }
+    fclose(fichier);
+    return nb_joueurs;
+}
+
+/*
+ * sauvegarder_historique
+ * Écrase le fichier "stats.txt" et y réécrit tous les joueurs
+ * avec leurs statistiques mises à jour.
+ */
+void sauvegarder_historique(Joueur joueurs[], int nb_joueurs) {
+    FILE *fichier = fopen("stats.txt", "w");
+    int i;
+
+    if (fichier == NULL) {
+        printf("Erreur : sauvegarde impossible.\n");
+        return;
+    }
+
+    for (i = 0; i < nb_joueurs; i++) {
+        fprintf(fichier, "Nom: %s\n",       joueurs[i].nom);
+        fprintf(fichier, "Parties: %d\n",   joueurs[i].parties);
+        fprintf(fichier, "Victoires: %d\n", joueurs[i].victoires);
+        fprintf(fichier, "Cases: %d\n",     joueurs[i].cases_parcourues);
+        fprintf(fichier, "---\n"); // Séparateur entre deux joueurs
+    }
+
+    fclose(fichier);
+}
+
+/*
+ * maj_historique
+ * Met à jour l'historique après une partie terminée :
+ *   - Pour chaque joueur de la partie : incrémente parties et cases_parcourues
+ *   - Pour le gagnant uniquement : incrémente victoires
+ * Si un joueur n'existait pas encore dans l'historique, il est créé.
+ */
+void maj_historique(Joueur historique[], int *nb_historique,
+                    char noms_partie[][MAX_NOM], int nb_joueurs_partie,
+                    char gagnant[], int cases_partie[]) {
+    int i, position;
+
+    for (i = 0; i < nb_joueurs_partie; i++) {
+        position = ajouter_joueur(historique, nb_historique, noms_partie[i]);
+        if (position != -1) {
+            historique[position].parties++;
+            historique[position].cases_parcourues += cases_partie[i];
+
+            if (strcmp(noms_partie[i], gagnant) == 0) {
+                historique[position].victoires++;
+            }
+        }
+    }
+}
+/*
+ * joueur_superieur
+ * Critère de comparaison pour le classement entre deux joueurs a et b.
+ * Retourne 1 si a est meilleur que b, selon ces priorités
+ */
+int joueur_superieur(Joueur a, Joueur b) {
+    if (a.victoires > b.victoires) {
+        return 1;
+    }
+
+    if (a.victoires == b.victoires && a.parties < b.parties) {
+        return 1;
+    }
+
+    if (a.victoires == b.victoires &&
+        a.parties == b.parties &&
+        a.cases_parcourues > b.cases_parcourues) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+ * trier_classement
+ * Trie le tableau joueurs[] du meilleur au moins bon,
+ * en utilisant l'algorithme de tri par sélection
+ */
+void trier_classement(Joueur joueurs[], int nb_joueurs) {
+    int    i, j, meilleur;
+    Joueur temp;
+
+    for (i = 0; i < nb_joueurs - 1; i++) {
+        meilleur = i;
+
+        for (j = i + 1; j < nb_joueurs; j++) {
+            if (joueur_superieur(joueurs[j], joueurs[meilleur])) {
+                meilleur = j; // On a trouvé un meilleur candidat
+            }
+        }
+
+        if (meilleur != i) { // Échange uniquement si nécessaire
+            temp = joueurs[i];
+            joueurs[i] = joueurs[meilleur];
+            joueurs[meilleur] = temp;
+        }
+    }
+}
+
+/*
+ * afficher_classement
+ * Trie et affiche le classement général de tous les joueurs
+ * qui ont joué sur cette machine.
+ */
+void afficher_classement(Joueur historique[], int nb_historique) {
+    int i;
+
+    if (nb_historique == 0) {
+        printf("\n  Aucun joueur dans l'historique.\n");
+        return;
+    }
+
+    trier_classement(historique, nb_historique);
+    printf(CYAN GRAS "\n  ======= CLASSEMENT GENERAL =======\n" RESET);
+
+    for (i = 0; i < nb_historique; i++) {
+        if (i == 0) {
+            printf(JAUNE "  1. " RESET); // Or
+        } else if (i == 1) {
+            printf(BLANC "  2. " RESET); // Argent
+        } else if (i == 2) {
+            printf(ROUGE "  3. " RESET); // Bronze
+        } else {
+            printf("  %d. ", i + 1);
+        }
+
+        printf("%-15s | Victoires: %d | Parties: %d | Cases: %d\n",
+               historique[i].nom, historique[i].victoires,
+               historique[i].parties, historique[i].cases_parcourues);
+    }
+
+    printf(CYAN GRAS "  ==================================\n\n" RESET);
+}
+
+/*
+ * afficher_resume_partie
+ * Affiche le bilan de la partie qui vient de se terminer
+ */
+void afficher_resume_partie(char noms_partie[][MAX_NOM], int nb_joueurs_partie,
+                            char gagnant[], int cases_partie[], int duree_sec) {
+    int i;
+    int minutes  = duree_sec / 60;
+    int secondes = duree_sec % 60;
+
+    printf(JAUNE GRAS "\n  ========= RESUME DE PARTIE =========\n" RESET);
+
+    if (strlen(gagnant) > 0) {
+        printf("  Gagnant : " VERT GRAS "%s\n" RESET, gagnant);
+    } else {
+        printf("  Gagnant : " ROUGE "Aucun (Abandon general)\n" RESET);
+    }
+
+    printf("  Duree   : %02d min %02d sec\n\n", minutes, secondes);
+
+    for (i = 0; i < nb_joueurs_partie; i++) {
+        printf("  - %-15s : %d cases parcourues\n", noms_partie[i], cases_partie[i]);
+    }
+
+    printf(JAUNE GRAS "  ====================================\n\n" RESET);
+}
+// ============================================================
+//  FONCTION PRINCIPALE — BOUCLE DE JEU
+// ============================================================
+
+int main(void) {
+    srand(time(NULL));
+    // Chargement de l'historique depuis le fichier stats.txt
+    Joueur historique[MAX_HISTO];
+    int nb_historique = charger_historique(historique);
+
+    Case        plateau[TAILLE][TAILLE];
+    char        cartes[25];
+    JoueurEnJeu tab_j[MAX_JOUEURS];
+    int         nb_joueurs, fini, en_lice;
+    char        gagnant_nom[MAX_NOM];
+    time_t      t_debut, t_fin;
+    int         duree, choix_menu, quitter = 0;
+    int         i;
+
+    // Écran de titre affiché au premier lancement
+    effacer_ecran();
+    printf(CYAN GRAS);
+    printf("\n  +==================================================+\n");
+    printf("  |                                                  |\n");
+    printf("  |          M E M O  -  R  P  G                     |\n");
+    printf("  |   Explorez le donjon, trouvez le coffre et       |\n");
+    printf("  |   votre arme antique !                           |\n");
+    printf("  |                                                  |\n");
+    printf("  +==================================================+\n\n" RESET);
+    printf("  Appuyez sur Entree pour demarrer...");
+
+    while (getchar() != '\n') {
+    }
+
+    // ========================================================
+    //  BOUCLE PRINCIPALE : menu → partie → menu → ...
+    // ========================================================
+    while (quitter == 0) {
+        printf(CYAN "  +==============================+\n" RESET);
+        printf(CYAN "  |" RESET "       MENU PRINCIPAL          " CYAN "|\n" RESET);
+        printf(CYAN "  +==============================+\n" RESET);
+        printf(CYAN "  |" RESET "  [1] Nouvelle partie          " CYAN "|\n" RESET);
+        printf(CYAN "  |" RESET "  [2] Classement general       " CYAN "|\n" RESET);
+        printf(CYAN "  |" RESET "  [3] Quitter                  " CYAN "|\n" RESET);
+        printf(CYAN "  +==============================+\n" RESET);
+
+        choix_menu = lire_entier("  Votre choix : ", 1, 3);
+
+        if (choix_menu == 3) {
+            quitter = 1;
+            printf(CYAN "\n  Merci d'avoir joue ! A bientot.\n\n" RESET);
+            continue;
+        }
+
+        if (choix_menu == 2) {
+            effacer_ecran();
+            afficher_classement(historique, nb_historique);
+            printf("  Appuyez sur Entree pour revenir au menu...");
+            getchar();
+            effacer_ecran();
+            continue;
+        }
+
+        // ====================================================
+        //  CONFIGURATION DES JOUEURS (avant la première partie)
+        // ====================================================
+        printf(CYAN "\n  === CONFIGURATION DES JOUEURS ===\n\n" RESET);
+        nb_joueurs = lire_entier("  Combien de joueurs (2 a 4) ? ", 2, 4);
+        en_lice = nb_joueurs;
+
+        for (i = 0; i < nb_joueurs; i++) {
+            char message[80];
+
+            printf(CYAN "\n  --- Configuration Joueur %d ---\n" RESET, i + 1);
+            sprintf(message, "  Nom du joueur %d : ", i + 1);
+            lire_nom(tab_j[i].nom, message);
+
+            printf("  Choisissez votre classe :\n");
+            printf("  " JAUNE "[0]" RESET " Guerrier  -> cherche l'Epee de feu\n");
+            printf("  " JAUNE "[1]" RESET " Ranger    -> cherche le Baton familier\n");
+            printf("  " JAUNE "[2]" RESET " Magicien  -> cherche le Grimoire interdit\n");
+            printf("  " JAUNE "[3]" RESET " Voleur    -> cherche la Dague du sommeil\n");
+
+            tab_j[i].classe = lire_entier("  Votre choix : ", 0, 3);
+
+            // Initialisation des stats de ce joueur pour la partie
+            tab_j[i].a_trouve_coffre = 0;
+            tab_j[i].a_trouve_arme   = 0;
+            tab_j[i].nb_pas          = 0;
+            tab_j[i].actif           = 1;
+        }
+
+        // ====================================================
+        //  BOUCLE "REJOUER" : même joueurs, nouveau plateau
+        // ====================================================
+        int rejouer = 1;
+
+        while (rejouer == 1) {
+            // Remise à zéro pour cette nouvelle partie
+            fini           = 0;
+            en_lice        = nb_joueurs;
+            gagnant_nom[0] = '\0';       // Chaîne vide = pas encore de gagnant
+            t_debut        = time(NULL); // Démarre le chronomètre
+
+            // Génération et placement aléatoire des cartes sur le plateau
+            remplir_cartes(cartes);
+            melanger_carte(cartes, 25);
+            remplir_plateau(cartes, plateau);
+            init_positions_depart(tab_j, nb_joueurs);
+
+            // Remise à zéro des statistiques de chaque joueur
+            for (i = 0; i < nb_joueurs; i++) {
+                tab_j[i].a_trouve_coffre = 0;
+                tab_j[i].a_trouve_arme   = 0;
+                tab_j[i].nb_pas          = 0;
+                tab_j[i].actif           = 1;
+            }
+
+            // ================================================
+            //  BOUCLE DE JEU : tours des joueurs en alternance
+            // ================================================
+            while (fini == 0 && en_lice > 0) {
+                // On parcourt les joueurs en rotation
+                for (i = 0; i < nb_joueurs && fini == 0; i++) {
+                    if (tab_j[i].actif == 0) {
+                        continue;
+                    }
+
+                    int action_valide = 0;
+
+                    while (action_valide == 0) {
+                        char action;
+                        int arme;
+                        char dir;
+                        int nx, ny;
+
+                        afficher_plateau(plateau, tab_j, nb_joueurs, i);
+
+                        printf("\n  (A)vancer ou (Q)uitter la partie ? ");
+                        scanf(" %c", &action);
+                        vider_buffer();
+
+                        // Le joueur choisit d'abandonner cette partie
+                        if (action == 'q' || action == 'Q') {
+                            printf(ROUGE "  %s quitte la partie.\n" RESET, tab_j[i].nom);
+                            tab_j[i].actif = 0;
+                            en_lice--;
+                            action_valide = 1;
+                            continue;
+                        }
+
+                        if (action != 'a' && action != 'A') {
+                            printf(ROUGE "  Commande inconnue. Tapez A ou Q.\n" RESET);
+                            printf("  Appuyez sur Entree pour continuer...");
+                            getchar();
+                            continue;
+                        }
+
+                        // --- ÉTAPE 1 : Le joueur choisit son arme ---
+                        arme = choisir_arme();
+
+                        // --- ÉTAPE 2 : Le joueur choisit sa direction ---
+                        printf("\n  Deplacement : " JAUNE "Z" RESET "=Haut  "
+                               JAUNE "S" RESET "=Bas  "
+                               JAUNE "Q" RESET "=Gauche  "
+                               JAUNE "D" RESET "=Droite\n");
+                        printf("  Votre direction : ");
+                        scanf(" %c", &dir);
+                        vider_buffer();
+
+                        // Calcul des nouvelles coordonnées selon la direction choisie
+                        nx = tab_j[i].x;
+                        ny = tab_j[i].y;
+
+                        if (dir == 'z' || dir == 'Z') {
+                            ny--; // Haut = diminue la ligne
+                        } else if (dir == 's' || dir == 'S') {
+                            ny++; // Bas = augmente la ligne
+                        } else if (dir == 'q' || dir == 'Q') {
+                            nx--; // Gauche = diminue la colonne
+                        } else if (dir == 'd' || dir == 'D') {
+                            nx++; // Droite = augmente la colonne
+                        } else {
+                            printf(ROUGE "  Direction inconnue ! Utilisez Z, S, Q ou D.\n" RESET);
+                            printf("  Appuyez sur Entree pour recommencer le choix du deplacement...");
+                            getchar();
+                            continue;
+                        }
+
+                        // --- ÉTAPE 3 : Vérification que le déplacement est possible ---
+
+                        // Le joueur ne peut pas sortir des bords du monde (x: 0-4, y: -1 à 5)
+                        if (nx < 0 || nx >= TAILLE || ny < -1 || ny > TAILLE) {
+                            printf(ROUGE "  Mur ! Impossible d'aller dans cette direction.\n" RESET);
+                            printf("  Appuyez sur Entree pour recommencer...");
+                            getchar();
+                            continue;
+                        }
+
+                        // Un joueur dans la zone de départ (hors plateau) ne peut pas
+                        // se déplacer latéralement : il doit entrer dans le donjon
+                        if ((ny == -1 || ny == TAILLE) && nx != tab_j[i].x_dep) {
+                            printf(ROUGE "  Vous devez entrer dans le donjon ! Impossible de marcher en dehors.\n" RESET);
+                            printf("  Appuyez sur Entree pour recommencer...");
+                            getchar();
+                            continue;
+                        }
+
+                        tab_j[i].x = nx;
+                        tab_j[i].y = ny;
+
+                        /*
+                         * Si le joueur est dans le plateau, on révèle la case
+                         * puis on applique son effet : combat, portail, totem,
+                         * coffre ou arme antique.
+                         */
+                        if (ny >= 0 && ny < TAILLE) {
+                            char type_case;
+                            char arme_recherche = ' ';
+
+                            tab_j[i].nb_pas++;
+                            plateau[ny][nx].visible = 1;
+                            type_case = plateau[ny][nx].type;
+
+                            afficher_plateau(plateau, tab_j, nb_joueurs, i);
+
+                            // --- Résolution de l'effet de la case ---
+                            if (type_case == 'B' || type_case == 'Z' ||
+                                type_case == 'T' || type_case == 'H') {
+
+                                if (resoudre_combat(arme, type_case) == DEFAITE) {
+                                    tab_j[i].x = tab_j[i].x_dep;
+                                    tab_j[i].y = tab_j[i].y_dep;
+                                    cacher_plateau(plateau);
+
+                                    printf(ROUGE "\n  DEFAITE ! Vous retournez au depart et tout le donjon est recache...\n" RESET);
+                                }
+
+                                // En cas de victoire au combat, le joueur continue son tour (boucle while)
+
+                            } else if (type_case == 'P') {
+                                char type_apres_portail;
+
+                                logique_portail(&tab_j[i].x, &tab_j[i].y);
+
+                                /*
+                                 * Après le portail, le joueur arrive sur une nouvelle case.
+                                 * On révèle cette case puis on applique aussi son effet.
+                                 */
+                                plateau[tab_j[i].y][tab_j[i].x].visible = 1;
+                                type_apres_portail = plateau[tab_j[i].y][tab_j[i].x].type;
+
+                                afficher_plateau(plateau, tab_j, nb_joueurs, i);
+
+                                if (type_apres_portail == 'B' || type_apres_portail == 'Z' ||
+                                    type_apres_portail == 'T' || type_apres_portail == 'H') {
+
+                                    if (resoudre_combat(arme, type_apres_portail) == DEFAITE) {
+                                        tab_j[i].x = tab_j[i].x_dep;
+                                        tab_j[i].y = tab_j[i].y_dep;
+                                        cacher_plateau(plateau);
+
+                                        printf(ROUGE "\n  DEFAITE ! Vous retournez au depart et tout le donjon est recache...\n" RESET);
+                                    }
+
+                                } else if (type_apres_portail == 'M') {
+                                    logique_totem(plateau, &tab_j[i].x, &tab_j[i].y,
+                                                  tab_j[i].x_dep, tab_j[i].y_dep);
+
+                                } else if (type_apres_portail == 'P') {
+                                    printf(MAGENTA "  Vous etes deja sur le portail.\n" RESET);
+
+                                } else {
+                                    if (tab_j[i].classe == 0) {
+                                        arme_recherche = 'E';
+                                    } else if (tab_j[i].classe == 1) {
+                                        arme_recherche = 'F';
+                                    } else if (tab_j[i].classe == 2) {
+                                        arme_recherche = 'G';
+                                    } else if (tab_j[i].classe == 3) {
+                                        arme_recherche = 'D';
+                                    }
+
+                                    if (verifier_victoire(&tab_j[i].a_trouve_coffre,
+                                                          &tab_j[i].a_trouve_arme,
+                                                          type_apres_portail,
+                                                          arme_recherche)) {
+                                        fini = 1;
+                                        strcpy(gagnant_nom, tab_j[i].nom);
+
+                                        printf(VERT GRAS "\n   VICTOIRE ! %s a trouve son arme et le coffre !\n" RESET,
+                                               tab_j[i].nom);
+                                    }
+                                }
+
+                            } else if (type_case == 'M') {
+                                logique_totem(plateau, &tab_j[i].x, &tab_j[i].y,
+                                              tab_j[i].x_dep, tab_j[i].y_dep);
+
+                            } else {
+                                if (tab_j[i].classe == 0) {
+                                    arme_recherche = 'E';
+                                } else if (tab_j[i].classe == 1) {
+                                    arme_recherche = 'F';
+                                } else if (tab_j[i].classe == 2) {
+                                    arme_recherche = 'G';
+                                } else if (tab_j[i].classe == 3) {
+                                    arme_recherche = 'D';
+                                }
+
+                                if (verifier_victoire(&tab_j[i].a_trouve_coffre,
+                                                      &tab_j[i].a_trouve_arme,
+                                                      type_case,
+                                                      arme_recherche)) {
+                                    fini = 1;
+                                    strcpy(gagnant_nom, tab_j[i].nom);
+
+                                    printf(VERT GRAS "\n   VICTOIRE ! %s a trouve son arme et le coffre !\n" RESET,
+                                           tab_j[i].nom);
+                                }
+                            }
+                        } else {
+                            afficher_plateau(plateau, tab_j, nb_joueurs, i);
+                        }
+                        action_valide = 1;
+                        printf("\n  Appuyez sur Entree pour passer au tour suivant...");
+                        getchar();
+                    }
+                }
+            }
+            // ================================================
+            //  FIN DE PARTIE : résumé et sauvegarde
+            // ================================================
+            t_fin = time(NULL);
+            duree = (int)difftime(t_fin, t_debut);
+
+            effacer_ecran();
+            printf(CYAN GRAS "  +===========================================+\n" RESET);
+            printf(CYAN GRAS "  |" RESET BLANC GRAS "               FIN DE LA PARTIE            " CYAN GRAS "|\n" RESET);
+            printf(CYAN GRAS "  +===========================================+\n\n" RESET);
+
+            afficher_plateau_final(plateau);
+            char noms_partie[MAX_JOUEURS][MAX_NOM];
+            int  cases_partie[MAX_JOUEURS];
+            for (i = 0; i < nb_joueurs; i++) {
+                strcpy(noms_partie[i], tab_j[i].nom);
+                cases_partie[i] = tab_j[i].nb_pas;
+            }
+            afficher_resume_partie(noms_partie, nb_joueurs, gagnant_nom, cases_partie, duree);
+            maj_historique(historique, &nb_historique, noms_partie, nb_joueurs, gagnant_nom, cases_partie);
+            sauvegarder_historique(historique, nb_historique); // Sauvegarde immédiate dans le fichier
+            printf("  [1] Rejouer une partie avec les memes joueurs\n");
+            printf("  [2] Retourner au menu principal\n");
+            rejouer = lire_entier("  Votre choix : ", 1, 2);
+            if (rejouer == 2) {
+                effacer_ecran();
+                break;
+            }
+        }
+    }
+    return 0;
+}
