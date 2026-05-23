@@ -71,10 +71,14 @@ void afficher_statut_joueur(JoueurEnJeu *j, int idx) {
     char *couleurs[4] = {CYAN, JAUNE, VERT, MAGENTA};
     printf(GRAS "%s  J%d: %-12s" RESET, couleurs[idx], idx + 1, j->nom);
 
-    if      (j->class_j == 0) printf("Guerrier ");
-    else if (j->class_j == 1) printf("Ranger   ");
-    else if (j->class_j == 2) printf("Magicien ");
-    else if (j->class_j == 3) printf("Voleur   ");
+    if      (j->classe == 0) {
+        printf("Guerrier ");}
+    else if (j->classe == 1) {
+        printf("Ranger   ");}
+    else if (j->classe == 2) {
+        printf("Magicien ");}
+    else if (j->classe == 3) {
+        printf("Voleur   ");}
 
     printf("| Coffre: ");
     if (j->a_trouve_coffre) printf(VERT "OUI" RESET);
