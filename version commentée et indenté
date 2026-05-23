@@ -3,6 +3,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+/*
+ * FONCTIONS DES BIBLIOTHEQUES UTILISEES :
+ *
+ * <string.h>
+ * - strlen(chaine) : retourne le nombre de caracteres d'une chaine
+ * - strcmp(chaine1, chaine2) : compare deux chaines (0 = identiques)
+ * - strcpy(destination, source) : copie une chaine dans une autre
+ *
+ * <time.h>
+ * - time(NULL) : retourne l'heure actuelle en secondes
+ * - difftime(temps_fin, temps_debut) : difference en secondes entre deux instants
+ *
+ * <stdlib.h>
+ * - rand() : genere un nombre aleatoire
+ * - srand(valeur) : initialise le generateur de nombres aleatoires
+ * - atoi(chaine) : convertit une chaine en entier (ex: "123" -> 123)
+ *
+ * <stdio.h>
+ * - sprintf(chaine, format, ...) : ecrit du texte formate dans une chaine
+ * - fopen(nom_fichier, mode) : ouvre un fichier (r=lecture, w=ecriture)
+ * - fgets(buffer, taille, fichier) : lit une ligne dans un fichier
+ * - fprintf(fichier, format, ...) : ecrit dans un fichier
+ * - fclose(fichier) : ferme un fichier
+ * ============================================================================
+ */
 // ============================================================
 //  CONSTANTES GLOBALES
 // ============================================================
