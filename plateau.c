@@ -53,11 +53,14 @@ void cacher_plateau(Case plateau[TAILLE][TAILLE]) {
 
 void init_positions_depart(JoueurEnJeu tab_j[], int nb_joueurs) {
     int i;
-    tab_j[0].x_dep = 2; tab_j[0].y_dep = -1;  // J1 : Nord
-    if (nb_joueurs > 1) { tab_j[1].x_dep = 2; tab_j[1].y_dep = 5; }   // J2 : Sud
-    if (nb_joueurs > 2) { tab_j[2].x_dep = -1; tab_j[2].y_dep = 2; }  // J3 : Ouest
-    if (nb_joueurs > 3) { tab_j[3].x_dep = 5; tab_j[3].y_dep = 2; }   // J4 : Est
-
+    tab_j[0].x_dep = 0; tab_j[0].y_dep = -1;
+    if (nb_joueurs > 1) { 
+        tab_j[1].x_dep = 4; 
+        tab_j[1].y_dep = 5; }
+    if (nb_joueurs > 2) { tab_j[2].x_dep = 4; tab_j[2].y_dep = -1; }
+if (nb_joueurs > 3) {
+    tab_j[3].x_dep = 0; 
+    tab_j[3].y_dep = 5; }
     for (i = 0; i < nb_joueurs; i++) {
         tab_j[i].x = tab_j[i].x_dep;
         tab_j[i].y = tab_j[i].y_dep;
