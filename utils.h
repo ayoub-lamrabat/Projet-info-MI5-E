@@ -1,9 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-void effacer_ecran(void);
-void vider_buffer(void);
+#include "structures.h"
+
+void effacer_ecran();
+void vider_buffer();
 void lire_nom(char nom[], char message[]);
-int lire_entier(char message[], int min, int max);
+int  lire_entier(char message[], int min, int max);
 
 #endif
