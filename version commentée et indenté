@@ -205,7 +205,7 @@ void remplir_plateau(char carte[25], Case plateau[5][5]) {
     for (i = 0; i < 5; i++) {
         for (j = 0; j < 5; j++) {
             plateau[i][j].type = carte[a++]; // Affecte la carte suivante à cette case
-            plateau[i][j].visible = 0;       // Cachée au départ (brouillard de guerre)
+            plateau[i][j].visible = 0;       // Cachée au départ 
         }
     }
 }
