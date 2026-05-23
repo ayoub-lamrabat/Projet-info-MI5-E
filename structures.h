@@ -20,7 +20,7 @@
 
 // Codes couleur ANSI : permettent d'afficher du texte coloré dans le terminal
 #define RESET     "\033[0m"   // Remet le style par défaut (annule couleur et gras)
-#define GRAS      "\033[1m"   // Correction : suppression de l'antislash fautif
+#define GRAS      "\033[1m"   
 #define ROUGE     "\033[31m"
 #define VERT      "\033[32m"
 #define JAUNE     "\033[33m"
@@ -28,7 +28,7 @@
 #define MAGENTA   "\033[35m"
 #define CYAN      "\033[36m"
 #define BLANC     "\033[37m"
-#define FOND_NOIR "\033[40m"  // Fond noir, utile pour simuler le brouillard de guerre '~~~'
+#define FOND_NOIR "\033[40m"  // Fond noir, utile pour simuler le brouillard  '~~~'
 
 // ============================================================
 //  STRUCTURES DE DONNÉES
@@ -44,20 +44,20 @@ typedef struct {
 typedef struct {
     int x, y;             // Position actuelle sur le plateau (ou coordonnées hors-plateau au départ)
     int x_dep, y_dep;     // Coordonnées de départ initiales (mémorisées pour y renvoyer le joueur en cas de défaite)
-    char nom[MAX_NOM];    // Nom de l'aventurier
+    char nom[MAX_NOM];   
     int class;          
-    int a_trouve_coffre;  // Boolean (0 ou 1) : le joueur a ramassé au moins un trésor
-    int a_trouve_arme;    // Boolean (0 ou 1) : le joueur a trouvé SON arme antique fétiche
-    int nb_pas;           // Compteur du nombre total de cases explorées (statistique de fin de partie)
-    int actif;            // 1 = joue toujours, 0 = a déclaré forfait / quitté prématurément
+    int a_trouve_coffre;  
+    int a_trouve_arme;   
+    int nb_pas;           // Compteur du nombre total de cases explorées 
+    int actif;            // 1 = joue toujours, 0 = a déclaré forfait 
 } JoueurEnJeu;
 
 // Données d'un joueur destinées à être sauvegardées à long terme dans le fichier texte
 typedef struct {
     char nom[MAX_NOM];
-    int parties;          // Nombre de parties jouées au total
-    int victoires;        // Nombre de victoires enregistrées
-    int cases_parcourues; // Cumul de toutes les cases explorées à travers toutes les parties
+    int parties;          
+    int victoires;        
+    int cases_parcourues; 
 } Joueur;
 
 #endif
