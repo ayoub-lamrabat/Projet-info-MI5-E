@@ -45,7 +45,7 @@ typedef struct {
     int x, y;             // Position actuelle sur le plateau (ou coordonnées hors-plateau au départ)
     int x_dep, y_dep;     // Coordonnées de départ initiales (mémorisées pour y renvoyer le joueur en cas de défaite)
     char nom[MAX_NOM];    // Nom de l'aventurier
-    int class_j;          // Renommé 'class_j' car 'classe' peut être un mot réservé sur certains compilateurs
+    int class;          
     int a_trouve_coffre;  // Boolean (0 ou 1) : le joueur a ramassé au moins un trésor
     int a_trouve_arme;    // Boolean (0 ou 1) : le joueur a trouvé SON arme antique fétiche
     int nb_pas;           // Compteur du nombre total de cases explorées (statistique de fin de partie)
