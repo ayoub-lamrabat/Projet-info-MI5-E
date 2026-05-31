@@ -45,7 +45,7 @@ typedef struct {
     int x, y;             // Position actuelle sur le plateau (ou coordonnées hors-plateau au départ)
     int x_dep, y_dep;     // Coordonnées de départ initiales (mémorisées pour y renvoyer le joueur en cas de défaite)
     char nom[MAX_NOM];   
-    int class;          
+    int classe;          
     int a_trouve_coffre;  
     int a_trouve_arme;   
     int nb_pas;           // Compteur du nombre total de cases explorées 
